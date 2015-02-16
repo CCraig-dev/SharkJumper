@@ -1,9 +1,11 @@
 #include <cstdlib>
 #include <iostream>
+#include <pthread.h>
 #include <time.h>
+#include <unistd.h>
 #include <sys/netmgr.h>
 #include <sys/neutrino.h>
-#include <pthread.h>
+
 
 using namespace std;
 
@@ -103,6 +105,7 @@ bool calculateComputationTime (int channelID)
 	            	{
 	            		cout << __FUNCTION__ << "unlocking the mutex\n" << std::endl;
 	            		pthread_mutex_unlock(&timimgMutex);
+	            		timingMutexLocked = false;
 	            	}
 	            	else
 	            	{
@@ -129,6 +132,12 @@ bool calculateComputationTime (int channelID)
 		   cout << "Timer: Error in timer_delete()" << endl;
 		}
 
+		cout << __FUNCTION__ << " waiting for thread to join " << endl;
+		if(pthread_join(thread_tid, NULL))
+		{
+			cout << __FUNCTION__  << "Could not join thread. "" << endl";
+		}
+
    return true;
 }
 
@@ -143,6 +152,8 @@ void* measureTime( void* arg )
     }
 
     cout << __FUNCTION__ << " end" << endl;
+
+    sleep(1);
 
     return NULL;
 }
