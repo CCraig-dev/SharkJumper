@@ -38,12 +38,15 @@ int main(int argc, char *argv[]) {
 	   channelID = ChannelCreate(0);
 
 	   calculateComputationTime (channelID);
+
+	   // Howard's code will go here.
+
+
 	return EXIT_SUCCESS;
 }
 
 bool calculateComputationTime (int channelID)
 {
-	bool keepRunning = true;  // We're using an int as a flag to keep running
 	bool timingMutexLocked = false;
 
 
@@ -115,6 +118,8 @@ bool calculateComputationTime (int channelID)
 	            		keepRunning = false;
 	            		pthread_mutex_unlock(&timimgMutex);
 
+	            		cout << __FUNCTION__ << " waiting for thread to join " << endl;
+
 	            		cout << __FUNCTION__ << " iterationsPerSecond " << iterationsPerSecond << endl;
 	            	}
 	            } /* else other pulses ... */
@@ -132,12 +137,12 @@ bool calculateComputationTime (int channelID)
 		   cout << "Timer: Error in timer_delete()" << endl;
 		}
 
-		cout << __FUNCTION__ << " waiting for thread to join " << endl;
 		if(pthread_join(thread_tid, NULL))
 		{
 			cout << __FUNCTION__  << "Could not join thread. "" << endl";
 		}
 
+		cout << __FUNCTION__ << " end";
    return true;
 }
 
@@ -153,7 +158,7 @@ void* measureTime( void* arg )
 
     cout << __FUNCTION__ << " end" << endl;
 
-    sleep(1);
+
 
     return NULL;
 }
