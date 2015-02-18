@@ -6,13 +6,14 @@
 #include <sys/netmgr.h>
 #include <sys/neutrino.h>
 
+#include "TCBThread.h"
 
 using namespace std;
 
 #define MY_PULSE_CODE   _PULSE_CODE_MINAVAIL
 
 // Used to tune the code to the board
-unsigned long iterationsPerSecond = 0;
+long iterationsPerSecond = 0;
 bool keepRunning = true;
 pthread_mutex_t timimgMutex;
 
@@ -39,8 +40,24 @@ int main(int argc, char *argv[]) {
 
 	   calculateComputationTime (channelID);
 
-	   // Howard's code will go here.
+	   // Howard's code will go here after we've tuned the computation time.
+	   TCBThread testThread(100, 200, 150, iterationsPerSecond, 1);
 
+	   testThread.suspend ();
+
+	   testThread.run();
+
+	   sleep(1);
+
+	   testThread.resume();
+
+	   sleep(1);
+
+	   testThread.stop();
+
+	   testThread.WaitForInternalThreadToExit();
+
+	   cout << __FUNCTION__ << " done"<< endl;
 
 	return EXIT_SUCCESS;
 }
@@ -157,8 +174,6 @@ void* measureTime( void* arg )
     }
 
     cout << __FUNCTION__ << " end" << endl;
-
-
 
     return NULL;
 }
