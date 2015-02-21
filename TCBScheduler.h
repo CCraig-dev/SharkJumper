@@ -14,11 +14,13 @@
 #include "MyThread.h"
 #include "TCBThread.h"
 
+#include <mqueue.h>
+
 struct TaskParam
 {
-	double configComputeTimems;
-	double configPeriodms;
-	double configDeadlinems;
+	int configComputeTimems;
+	int configPeriodms;
+	int configDeadlinems;
 
 	// Initialize our variables to default values.
 	TaskParam ()
@@ -52,15 +54,13 @@ public:
 
 	void stopSim ();
 
-	void initialize ();
-
 	void stop();
 
-	void setSimTime(int newSimTimeSec) {simTimeSec = newSimTimeSec; }
+	void setSimTime(int newSimTimeSec);
 
 	int getSimTime() {return simTimeSec; }
 
-	void setSchedulingStrategy(SchedulingStrategy newStrategy) {strategy = newStrategy; }
+	void setSchedulingStrategy(SchedulingStrategy newStrategy);
 
 	SchedulingStrategy getSchedulingStrategy() {return strategy; }
 
@@ -69,19 +69,30 @@ private:
     // Implementation of our code from mythreadclass.h
 	virtual void InternalThreadEntry();
 
+    void initializeSim();
+
+    void updatetimeSpec (timespec & time, int valuems);
+
 //	void rateMonotinicScheduler();
 //  void leastSlackTime();
 //  void EarliestDeadlineFirst();
+
+	mqd_t mq;
+
+	bool running;
 
 	int simTimeSec;
 
 	SchedulingStrategy strategy;
 
+	timespec startSimTime;
+	timespec endSimTime;
+
 	std::vector <TCBThread> TCBThreads;
 
 	std::list <TCBThread> * TCBThreadQueue;
 
-	bool running;
+	// Pointer this classe's message queue.
 };
 
 #endif /* TCBSCHEDULER_H_ */

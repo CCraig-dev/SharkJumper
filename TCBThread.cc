@@ -7,8 +7,8 @@ using namespace std;
 
 const int millisecPerSec = 1000;
 
-TCBThread::TCBThread (double configComputeTimems, double configPeriodms,
-		              double configDeadlinems, long iterationsPerSecond, int configThreadNumber)
+TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
+		              int configDeadlinems, long iterationsPerSecond, int configThreadNumber)
 :computeTimems(configComputeTimems),
  deadlinems(configDeadlinems),
  periodms(configPeriodms),

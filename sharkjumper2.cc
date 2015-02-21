@@ -24,12 +24,6 @@ pthread_mutex_t timimgMutex;
 bool calculateComputationTime (int channelID, int &iterationsPerSecond);
 void* measureTime( void* arg );
 
-struct internalMsg
-{
-	int TYPE;
-	int value;
-};
-
 typedef union {
         struct _pulse   pulse;
 
@@ -52,7 +46,7 @@ int main(int argc, char *argv[]) {
 	   channelID = ChannelCreate(0);
 
 	   calculateComputationTime (channelID, iterationsPerSecond);
-	   cout << __FUNCTION__ << " iterationsPerSecond 2" << iterationsPerSecond << endl;
+	   cout << __FUNCTION__ << " iterationsPerSecond 2 " << iterationsPerSecond << endl;
 
 	   // Howard's code will go here after we've tuned the computation time.
 	   userInput.configComputeTimems = 100;
@@ -74,6 +68,12 @@ int main(int argc, char *argv[]) {
 
 	   scheduler.run();
 
+	   sleep (1);
+
+	   scheduler.setSimTime(5);
+
+	   scheduler.startSim();
+
 		// Debug code ignore this.
 /*
 	   TCBThread testThread(100, 200, 150, iterationsPerSecond, 1);
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 	   testThread.WaitForInternalThreadToExit();
 */
 	   sleep (60);
-	   cout << __FUNCTION__ << " done"<< endl;
+	   cout << __FUNCTION__ << " done "<< endl;
 
 	return EXIT_SUCCESS;
 }
@@ -156,10 +156,10 @@ bool calculateComputationTime (int channelID, int &iterationsPerSecond)
 	       rcvid = MsgReceive(channelID, &msg, sizeof(msg), NULL);
 	       if (rcvid == 0) { /* we got a pulse */
 	            if (msg.pulse.code == MY_PULSE_CODE) {
-	            	cout << __FUNCTION__ << "we got a pulse from our timer\n" << std::endl;
+	            	cout << __FUNCTION__ << "we got a pulse from our timer\n" << endl;
 	            	if(timingMutexLocked)
 	            	{
-	            		cout << __FUNCTION__ << "unlocking the mutex\n" << std::endl;
+	            		cout << __FUNCTION__ << "unlocking the mutex\n" << endl;
 	            		pthread_mutex_unlock(&timimgMutex);
 	            		timingMutexLocked = false;
 	            	}
@@ -175,7 +175,7 @@ bool calculateComputationTime (int channelID, int &iterationsPerSecond)
 	            		iterationsPerSecond = iterationsPerSecondCounter;
 	            		pthread_mutex_unlock(&timimgMutex);
 
-	            		cout << __FUNCTION__ << " iterationsPerSecond 1"  << iterationsPerSecond << endl;
+	            		cout << __FUNCTION__ << " iterationsPerSecond 1 "  << iterationsPerSecond << endl;
 	            	}
 	            } /* else other pulses ... */
 	       } /* else other messages ... */
@@ -202,13 +202,13 @@ bool calculateComputationTime (int channelID, int &iterationsPerSecond)
 
 		//cout << __FUNCTION__ << " iterationsPerSecond 2" << iterationsPerSecond << endl;
 
-		cout << __FUNCTION__ << " end";
+		cout << __FUNCTION__ << " end " << endl;;
    return true;
 }
 
 void* measureTime( void* arg )
 {
-	cout << __FUNCTION__ << " begin" << endl;
+	cout << __FUNCTION__ << " begin " << endl;
 
     while(keepRunning == true) {
         pthread_mutex_lock( &timimgMutex );
@@ -216,7 +216,7 @@ void* measureTime( void* arg )
         pthread_mutex_unlock( &timimgMutex );
     }
 
-    cout << __FUNCTION__ << " end" << endl;
+    cout << __FUNCTION__ << " end " << endl;
 
     return NULL;
 }

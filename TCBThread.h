@@ -8,14 +8,14 @@ class TCBThread: public MyThread
 {
 public:
 	// Its a constructor Jim. - Spock.
-	TCBThread(double configComputeTimems, double configPeriodms, double configDeadlinems,
+	TCBThread(int configComputeTimems, int configPeriodms, int configDeadlinems,
 			  long iterationsPerSecond, int configThreadNumber);
 
     virtual ~TCBThread() {/* empty */}
 
-    double getComputeTime() { return computeTimems; }
-    double getdeadline() { return deadlinems; }
-    double getperiodms() { return periodms; }
+    int getComputeTime() { return computeTimems; }
+    int getdeadline() { return deadlinems; }
+    int getperiodms() { return periodms; }
 
     timespec getNextPeriod () {return nextPeriod; }
 
@@ -42,14 +42,14 @@ private:
     // Implementation of our code from mythreadclass.h
 	virtual void InternalThreadEntry();
 
-	double computeTimems;
-	double deadlinems;
-	double periodms;
+	int computeTimems;
+	int deadlinems;
+	int periodms;
 
 	int TCBThreadNumber;
 
-	double computeTimeExecutedms;
-	double periodExecutedms;
+	int computeTimeExecutedms;
+	int periodExecutedms;
 	long doWork;
 
 	timespec nextPeriod;
