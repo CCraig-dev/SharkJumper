@@ -3,9 +3,11 @@
 #include <pthread.h>
 #include <time.h>
 #include <unistd.h>
+#include <vector>
 #include <sys/netmgr.h>
 #include <sys/neutrino.h>
 
+#include "TCBScheduler.h"
 #include "TCBThread.h"
 
 using namespace std;
@@ -13,34 +15,67 @@ using namespace std;
 #define MY_PULSE_CODE   _PULSE_CODE_MINAVAIL
 
 // Used to tune the code to the board
-long iterationsPerSecond = 0;
+int iterationsPerSecondCounter = 0;  // This is a free running counter and
+                                      // should only be used for board tunning.
 bool keepRunning = true;
 pthread_mutex_t timimgMutex;
 
 // Function declarations
-bool calculateComputationTime (int channelID);
+bool calculateComputationTime (int channelID, int &iterationsPerSecond);
 void* measureTime( void* arg );
+
+struct internalMsg
+{
+	int TYPE;
+	int value;
+};
 
 typedef union {
         struct _pulse   pulse;
+
         /* your other message structures would go
            here too */
 } my_message_t;
 
-
-
 int main(int argc, char *argv[]) {
 	std::cout << "Welcome to the QNX Momentics IDE" << std::endl;
-	   int                     channelID = 0;
+	   int channelID = 0;
+
+	   int iterationsPerSecond = 0;
+
+	   TaskParam userInput;
+	   vector <TaskParam> threadConfigs;
 
 	   // Set up a message channel for this process.
 	   // You'll use this for getting messages back
 	   // from the scheduler and for figuring out how may loop iterations in 1 second.
 	   channelID = ChannelCreate(0);
 
-	   calculateComputationTime (channelID);
+	   calculateComputationTime (channelID, iterationsPerSecond);
+	   cout << __FUNCTION__ << " iterationsPerSecond 2" << iterationsPerSecond << endl;
 
 	   // Howard's code will go here after we've tuned the computation time.
+	   userInput.configComputeTimems = 100;
+	   userInput.configPeriodms = 300;
+	   userInput.configDeadlinems = 200;
+	   threadConfigs.push_back(userInput);
+
+	   userInput.configComputeTimems = 200;
+	   userInput.configPeriodms = 400;
+	   userInput.configDeadlinems = 300;
+	   threadConfigs.push_back(userInput);
+
+	   userInput.configComputeTimems = 300;
+	   userInput.configPeriodms = 500;
+	   userInput.configDeadlinems = 400;
+	   threadConfigs.push_back(userInput);
+
+	   TCBScheduler scheduler (threadConfigs, iterationsPerSecond);
+
+	   scheduler.run();
+
+		// Debug code ignore this.
+/*
 	   TCBThread testThread(100, 200, 150, iterationsPerSecond, 1);
 
 	   testThread.suspend ();
@@ -56,13 +91,14 @@ int main(int argc, char *argv[]) {
 	   testThread.stop();
 
 	   testThread.WaitForInternalThreadToExit();
-
+*/
+	   sleep (60);
 	   cout << __FUNCTION__ << " done"<< endl;
 
 	return EXIT_SUCCESS;
 }
 
-bool calculateComputationTime (int channelID)
+bool calculateComputationTime (int channelID, int &iterationsPerSecond)
 {
 	bool timingMutexLocked = false;
 
@@ -127,24 +163,26 @@ bool calculateComputationTime (int channelID)
 	            		pthread_mutex_unlock(&timimgMutex);
 	            		timingMutexLocked = false;
 	            	}
-	            	else
+	            	else if (keepRunning == true)
 	            	{
 	            		// kill the thread by stopping it and then setting the
 	            		// keep running flag to false
 	            		pthread_mutex_lock(&timimgMutex);
 	            		keepRunning = false;
+
+	            		// Turns out our numbers were off by 200% we need to capture
+	            		// the value of the counter at this point to ensure accuracy.
+	            		iterationsPerSecond = iterationsPerSecondCounter;
 	            		pthread_mutex_unlock(&timimgMutex);
 
-	            		cout << __FUNCTION__ << " waiting for thread to join " << endl;
-
-	            		cout << __FUNCTION__ << " iterationsPerSecond " << iterationsPerSecond << endl;
+	            		cout << __FUNCTION__ << " iterationsPerSecond 1"  << iterationsPerSecond << endl;
 	            	}
 	            } /* else other pulses ... */
 	       } /* else other messages ... */
 	   }
 
 	   // Please dont' touch this I don't quite know what it will do.
-//	    if (ConnectDetach(chid) == -1) {
+//	    if (ConnectDetach(channelID) == -1) {
 //	        printf("Timer: Error in ConnectDetach\n");
 //	    }
 
@@ -154,10 +192,15 @@ bool calculateComputationTime (int channelID)
 		   cout << "Timer: Error in timer_delete()" << endl;
 		}
 
+
+		cout << __FUNCTION__ << " waiting for thread to join " << endl;
+
 		if(pthread_join(thread_tid, NULL))
 		{
 			cout << __FUNCTION__  << "Could not join thread. "" << endl";
 		}
+
+		//cout << __FUNCTION__ << " iterationsPerSecond 2" << iterationsPerSecond << endl;
 
 		cout << __FUNCTION__ << " end";
    return true;
@@ -169,7 +212,7 @@ void* measureTime( void* arg )
 
     while(keepRunning == true) {
         pthread_mutex_lock( &timimgMutex );
-        ++iterationsPerSecond;
+        ++iterationsPerSecondCounter;
         pthread_mutex_unlock( &timimgMutex );
     }
 

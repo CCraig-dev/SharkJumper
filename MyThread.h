@@ -13,7 +13,6 @@
 #define _MYTHREAD_H_
 
 #include <pthread.h>
-#include <iostream.h>
 
 class MyThread
 {

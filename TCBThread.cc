@@ -8,11 +8,11 @@ using namespace std;
 const int millisecPerSec = 1000;
 
 TCBThread::TCBThread (double configComputeTimems, double configPeriodms,
-		              double configDeadlinems, long iterationsPerSecond, int configTaskNumber)
+		              double configDeadlinems, long iterationsPerSecond, int configThreadNumber)
 :computeTimems(configComputeTimems),
  deadlinems(configDeadlinems),
  periodms(configPeriodms),
- TCBThreadNumber(configTaskNumber),
+ TCBThreadNumber(configThreadNumber),
  computeTimeExecutedms(0),
  periodExecutedms(0),
  doWork(0)
@@ -34,6 +34,9 @@ void  TCBThread::InternalThreadEntry()
 {
  cout << __FUNCTION__  << " TCBThread " << TCBThreadNumber << " started" << endl;
 
+    // set the name of the thread for tracing
+    std::string name = "TCBThread " + TCBThreadNumber;
+ 	pthread_setname_np(_thread, name.c_str());
 
     doWork = computeTimeIterations;
 

@@ -9,7 +9,7 @@ class TCBThread: public MyThread
 public:
 	// Its a constructor Jim. - Spock.
 	TCBThread(double configComputeTimems, double configPeriodms, double configDeadlinems,
-			  long iterationsPerSecond, int configTaskNumber);
+			  long iterationsPerSecond, int configThreadNumber);
 
     virtual ~TCBThread() {/* empty */}
 
