@@ -8,8 +8,9 @@
 #ifndef COMMON_H_
 #define COMMON_H_
 
+#include <string>
+
 #define MAXMSGSIZE 4096
-std::string msgQueueName = "TCBSchedulerMsgQueue";
 
 #define MSG_STARTSIM 1
 

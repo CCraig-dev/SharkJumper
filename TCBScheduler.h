@@ -8,13 +8,15 @@
 #ifndef TCBSCHEDULER_H_
 #define TCBSCHEDULER_H_
 
-#include <vector>
 #include <list>
+#include <mqueue.h>
+#include <vector>
+
 
 #include "MyThread.h"
 #include "TCBThread.h"
 
-#include <mqueue.h>
+
 
 struct TaskParam
 {
@@ -77,7 +79,7 @@ private:
 //  void leastSlackTime();
 //  void EarliestDeadlineFirst();
 
-	mqd_t mq;
+	mqd_t toSchedmq;
 
 	bool running;
 
@@ -90,7 +92,7 @@ private:
 
 	std::vector <TCBThread> TCBThreads;
 
-	std::list <TCBThread> * TCBThreadQueue;
+	std::list <TCBThread*> TCBThreadQueue;
 
 	// Pointer this classe's message queue.
 };

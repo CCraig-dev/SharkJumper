@@ -1,7 +1,9 @@
 #ifndef _TCBTHREAD_H_
 #define _TCBTHREAD_H_
 
+#include <mqueue.h>
 #include <Time.h>
+
 #include "MyThread.h"
 
 class TCBThread: public MyThread
@@ -17,12 +19,14 @@ public:
     int getdeadline() { return deadlinems; }
     int getperiodms() { return periodms; }
 
-    timespec getNextPeriod () {return nextPeriod; }
+    int getConfigThreadNumber() { return TCBThreadNumber; }
+
+    timespec getNextPeriod () { return nextPeriod; }
 
     timespec getNextDeadline () {return nextDeadline; }
 
-    void SetNextPeriod (timespec & newPeriod) {nextPeriod = newPeriod;}
-    void SetNextDeadline (timespec & newDeadline) {nextPeriod = newDeadline;}
+    void setNextPeriod (timespec & newPeriod);
+    void setNextDeadline (timespec & newDeadline);
 
 	// function that is called to run the banks main loop
 	void run();
@@ -58,6 +62,8 @@ private:
 	long computeTimeIterations;
 
 	bool running;
+
+	mqd_t toSchedmq;
 
 	// Protects the customerQueue;
 	pthread_mutex_t TCBMutex;

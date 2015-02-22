@@ -1,5 +1,7 @@
 #include "TCBThread.h"
+//#include "Common.h"
 
+#include <errno.h>
 #include <iostream.h>
 #include <unistd.h>
 
@@ -27,6 +29,8 @@ TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
 
     // gotta initialize my mutex before starting.
 	pthread_mutex_init(&TCBMutex, NULL);
+
+	toSchedmq = 0;
 }
 
 // this is where we do all the work.
@@ -37,6 +41,14 @@ void  TCBThread::InternalThreadEntry()
     // set the name of the thread for tracing
     std::string name = "TCBThread " + TCBThreadNumber;
  	pthread_setname_np(_thread, name.c_str());
+
+ 	std::string msgQueueName = "TCBSchedulerMsgQueue";
+
+	if ((toSchedmq = mq_open(msgQueueName.c_str(), O_RDWR)) == -1)
+	{
+		cout << __FUNCTION__  << " Message queue was not created "
+			 << strerror( errno ) << endl;
+	}
 
     doWork = computeTimeIterations;
 
@@ -58,6 +70,16 @@ void  TCBThread::InternalThreadEntry()
 void TCBThread::run( )
 {
 	MyThread::StartInternalThread();
+}
+
+void TCBThread::setNextDeadline (timespec & newDeadline)
+{
+	nextPeriod = newDeadline;
+}
+
+void TCBThread::setNextPeriod (timespec & newPeriod)
+{
+	nextPeriod = newPeriod;
 }
 
 void TCBThread::startNewComputePeriod ()

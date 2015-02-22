@@ -49,19 +49,19 @@ int main(int argc, char *argv[]) {
 	   cout << __FUNCTION__ << " iterationsPerSecond 2 " << iterationsPerSecond << endl;
 
 	   // Howard's code will go here after we've tuned the computation time.
-	   userInput.configComputeTimems = 100;
-	   userInput.configPeriodms = 300;
-	   userInput.configDeadlinems = 200;
+	   userInput.configComputeTimems = 10;
+	   userInput.configPeriodms = 30;
+	   userInput.configDeadlinems = 20;
 	   threadConfigs.push_back(userInput);
 
-	   userInput.configComputeTimems = 200;
-	   userInput.configPeriodms = 400;
-	   userInput.configDeadlinems = 300;
+	   userInput.configComputeTimems = 20;
+	   userInput.configPeriodms = 50;
+	   userInput.configDeadlinems = 40;
 	   threadConfigs.push_back(userInput);
 
-	   userInput.configComputeTimems = 300;
-	   userInput.configPeriodms = 500;
-	   userInput.configDeadlinems = 400;
+	   userInput.configComputeTimems = 10;
+	   userInput.configPeriodms = 100;
+	   userInput.configDeadlinems = 90;
 	   threadConfigs.push_back(userInput);
 
 	   TCBScheduler scheduler (threadConfigs, iterationsPerSecond);
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
 
 	   testThread.WaitForInternalThreadToExit();
 */
-	   sleep (60);
+	   sleep (90);
 	   cout << __FUNCTION__ << " done "<< endl;
 
 	return EXIT_SUCCESS;

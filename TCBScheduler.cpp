@@ -17,7 +17,7 @@ using namespace std;
 const int millisecPerSec = 1000;
 
 TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs, long iterationsPerSecond)
-: mq(0),
+: toSchedmq(0),
   running (true),
   simTimeSec(0),
   strategy(RMS)
@@ -42,20 +42,73 @@ TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs, long iteratio
 
 void TCBScheduler::initializeSim()
 {
-	timespec temp;
+	cout << __FUNCTION__  << " started " << endl;
+
+	timespec vectorTemp;
+	bool found = false;
 
 	for(unsigned int i=0; i < TCBThreads.size(); ++i)
 	{
 		// Set the next deadline for each thread.
-		temp = startSimTime;
-		updatetimeSpec (temp, TCBThreads[i].getdeadline());
-		TCBThreads[i].SetNextDeadline(temp);
+		vectorTemp = startSimTime;
+		updatetimeSpec (vectorTemp, TCBThreads[i].getdeadline());
+		TCBThreads[i].setNextDeadline(vectorTemp);
 
-		// Set the next period for each thread.
-		temp = startSimTime;
-		updatetimeSpec (temp, TCBThreads[i].getperiodms());
-		TCBThreads[i].SetNextPeriod(temp);
+
+		// RMS scheduling
+		// Since everything is ready at the start of the simulation, emplace them
+		// shortest computation time first order.
+		if (TCBThreadQueue.empty())
+		{
+//			cout << __FUNCTION__  << " list is empty " << TCBThreads[i].getConfigThreadNumber() << endl;
+			// if the list is empty just push it on.
+			TCBThreadQueue.push_back (&TCBThreads[i]);
+		}
+		else
+		{
+			cout << __FUNCTION__  << " list has stuff in it " << endl;
+			found = false;
+
+			for ( std::list<TCBThread*>::iterator iter = TCBThreadQueue.begin();
+				  iter != TCBThreadQueue.end() && found == false; ++iter)
+			{
+//				cout << __FUNCTION__  << " TCBThreads[i].getComputeTime() " << TCBThreads[i].getComputeTime() << endl;
+//				cout << __FUNCTION__  << " (*iter)->getComputeTime() " << (*iter)->getComputeTime() << endl;
+				if (TCBThreads[i].getComputeTime() < (*iter)->getComputeTime())
+				{
+//					cout << __FUNCTION__  << " list has stuff in it " << TCBThreads[i].getConfigThreadNumber() << endl;
+				   // Put it in front of the current TCBThread in the list.
+				   TCBThreadQueue.insert (iter, &TCBThreads[i]);
+				   found = true;
+				}
+//				else if (vectorTemp.tv_sec == listTemp.tv_sec && vectorTemp.tv_nsec < listTemp.tv_nsec)
+//				{
+					// Put it in front of the current TCBThread in the list.
+//					 TCBThreadQueue.insert (iter, &TCBThreads[i]);
+//					 found = true;
+//				}
+			}
+
+			// The deadline is greater than any of the items in the list.
+			if (found == false)
+			{
+				cout << __FUNCTION__  << " adding it to the back " << TCBThreads[i].getConfigThreadNumber() << endl;
+
+				TCBThreadQueue.push_back (&TCBThreads[i]);
+			}
+		}
 	}
+
+//	cout << __FUNCTION__  << " TCBThreadQueue.size() " << TCBThreadQueue.size() << endl;
+	// sanity check for RMS.
+//	 for (std::list<TCBThread*>::iterator iter=TCBThreadQueue.begin(); iter != TCBThreadQueue.end(); ++iter)
+//	 {
+//	    cout << ' ' << (*iter)->getConfigThreadNumber();
+//	 }
+
+//	 std::cout << '\n';
+
+	 cout << __FUNCTION__  << " end " << endl;
 }
 
 // this is where we do all the work.
@@ -67,18 +120,20 @@ void  TCBScheduler::InternalThreadEntry()
  	std::string name = "TCBScheduler";
 	pthread_setname_np(_thread, name.c_str());
 
-	cout << __FUNCTION__  << " priority " << getprio( 0 ) << endl;
+//	cout << __FUNCTION__  << " priority " << getprio( 0 ) << endl;
+
+	std::string msgQueueName = "TCBSchedulerMsgQueue";
 
 	// Create a message queue
 	char buffer[MAXMSGSIZE + 1] = {0};
-	if ((mq = mq_open(msgQueueName.c_str(), O_CREAT|O_RDWR)) == -1)
+	if ((toSchedmq = mq_open(msgQueueName.c_str(), O_CREAT|O_RDWR)) == -1)
 	{
 		cout << __FUNCTION__  << " Message queue was not created "
 			 << strerror( errno ) << endl;
 	}
 
 	cout << __FUNCTION__  << " TCBThreads.size() " << TCBThreads.size() << endl;
-	// start up your threads
+	//  your threads start them.
 	for(unsigned int i = 0; i < TCBThreads.size(); ++i)
 	{
 		TCBThreads[i].run( );
@@ -93,11 +148,9 @@ void  TCBScheduler::InternalThreadEntry()
 	clock_gettime(CLOCK_REALTIME, &nextWakeupTime);
 	startSimTime.tv_sec += 1;
 
-//	TODO: Replace Start Sime time with something generic.
-
 	while (running)
 	{
-		if(mq_timedreceive( mq, buffer, MAXMSGSIZE, NULL,  &nextWakeupTime ) > 0 )
+		if(mq_timedreceive( toSchedmq, buffer, MAXMSGSIZE, NULL,  &nextWakeupTime ) > 0 )
 		{
 			cout << __FUNCTION__  << " We got a message " << endl;
 			// The only messages we get are message structs so cast the buffer to
@@ -107,6 +160,10 @@ void  TCBScheduler::InternalThreadEntry()
 			if (message->messageType == MSG_STARTSIM)
 			{
 				cout << __FUNCTION__  << " We got a MSG_STARTSIM message " << endl;
+
+				initializeSim();
+
+
 			}
 		}
 		else if (errno == ETIMEDOUT)
@@ -117,9 +174,9 @@ void  TCBScheduler::InternalThreadEntry()
 		}
 	}
 
-	if (mq != -1)
+	if (toSchedmq != -1)
 	{
-		mq_close(mq);
+		mq_close(toSchedmq);
 	}
 
 	cout << __FUNCTION__  << " done" << endl;
@@ -154,7 +211,7 @@ void TCBScheduler::startSim ()
 	MsgStruct startMessage;
 	startMessage.messageType = MSG_STARTSIM;
 
-	if (mq_send(mq, reinterpret_cast<char*>(&startMessage), sizeof(MsgStruct), 0) < 0)
+	if (mq_send(toSchedmq, reinterpret_cast<char*>(&startMessage), sizeof(MsgStruct), 0) < 0)
 	{
 		cout << __FUNCTION__  << " Error sending startsim message "
 					 << strerror( errno ) << endl;
@@ -171,21 +228,26 @@ void TCBScheduler::stop()
 
 void TCBScheduler::updatetimeSpec (timespec & time, int valuems)
 {
-	long tempLong = 0;
-	const long secsPerNs = 1000000000;
+	long tempns = 0;
+	const long nsPerSec = 1000000000;
+	const long nsPerms = 1000000;
 
-	tempLong = time.tv_nsec + (valuems * 1000);
+//	cout << __FUNCTION__  << " time.tv_sec " << time.tv_sec << " time.tv_nsec " << time.tv_nsec << endl;
+//	cout << __FUNCTION__  << " valuems " << valuems << endl;
 
-	if (tempLong < secsPerNs)
+	tempns = time.tv_nsec + (valuems * nsPerms);
+
+	if (tempns < nsPerSec)
 	{
-		time.tv_nsec = tempLong;
+		time.tv_nsec = tempns;
 	}
 	else
 	{
 		time.tv_sec +=1;
-		tempLong -= secsPerNs;
-		time.tv_nsec = tempLong;
+		tempns -= nsPerSec;
+		time.tv_nsec = tempns;
 	}
 
+//	cout << __FUNCTION__  << " time.tv_sec " << time.tv_sec << " time.tv_nsec " << time.tv_nsec << endl << endl;
 }
 
