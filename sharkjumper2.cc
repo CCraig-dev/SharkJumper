@@ -49,26 +49,26 @@ int main(int argc, char *argv[]) {
 	   cout << __FUNCTION__ << " iterationsPerSecond 2 " << iterationsPerSecond << endl;
 
 	   // Howard's code will go here after we've tuned the computation time.
-	   userInput.configComputeTimems = 10;
-	   userInput.configPeriodms = 30;
-	   userInput.configDeadlinems = 20;
+	   userInput.configComputeTimems = 100;
+	   userInput.configPeriodms = 300;
+	   userInput.configDeadlinems = 200;
 	   threadConfigs.push_back(userInput);
 
-	   userInput.configComputeTimems = 20;
-	   userInput.configPeriodms = 50;
-	   userInput.configDeadlinems = 40;
+	   userInput.configComputeTimems = 200;
+	   userInput.configPeriodms = 500;
+	   userInput.configDeadlinems = 400;
 	   threadConfigs.push_back(userInput);
 
-	   userInput.configComputeTimems = 10;
-	   userInput.configPeriodms = 100;
-	   userInput.configDeadlinems = 90;
+	   userInput.configComputeTimems = 100;
+	   userInput.configPeriodms = 1000;
+	   userInput.configDeadlinems = 900;
 	   threadConfigs.push_back(userInput);
 
 	   TCBScheduler scheduler (threadConfigs, iterationsPerSecond);
 
 	   scheduler.run();
 
-	   sleep (1);
+	   sleep (5);
 
 	   scheduler.setSimTime(5);
 

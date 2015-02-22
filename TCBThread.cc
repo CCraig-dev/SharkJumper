@@ -1,5 +1,5 @@
 #include "TCBThread.h"
-//#include "Common.h"
+#include "Common.h"
 
 #include <errno.h>
 #include <iostream.h>
@@ -17,7 +17,7 @@ TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
  TCBThreadNumber(configThreadNumber),
  computeTimeExecutedms(0),
  periodExecutedms(0),
- doWork(0)
+ doWork(-2)
 {
 
 	computeTimeIterations = iterationsPerSecond / millisecPerSec * configComputeTimems;
@@ -27,30 +27,35 @@ TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
 
 	running = true;
 
-    // gotta initialize my mutex before starting.
-	pthread_mutex_init(&TCBMutex, NULL);
-
 	toSchedmq = 0;
+}
+
+int TCBThread::getComputeTimems()
+{
+	return computeTimems;
 }
 
 // this is where we do all the work.
 void  TCBThread::InternalThreadEntry()
 {
- cout << __FUNCTION__  << " TCBThread " << TCBThreadNumber << " started" << endl;
+// cout << __FUNCTION__  << " TCBThread " << TCBThreadNumber << " started" << endl;
 
     // set the name of the thread for tracing
     std::string name = "TCBThread " + TCBThreadNumber;
  	pthread_setname_np(_thread, name.c_str());
 
+    // gotta initialize my mutex before starting.
+	pthread_mutex_init(&TCBMutex, NULL);
+
  	std::string msgQueueName = "TCBSchedulerMsgQueue";
 
-	if ((toSchedmq = mq_open(msgQueueName.c_str(), O_RDWR)) == -1)
+	if ((toSchedmq = mq_open(msgQueueName.c_str(), O_WRONLY)) == -1)
 	{
 		cout << __FUNCTION__  << " Message queue was not created "
 			 << strerror( errno ) << endl;
 	}
 
-    doWork = computeTimeIterations;
+    //doWork = computeTimeIterations;
 
 	while (running)
 	{
@@ -62,6 +67,42 @@ void  TCBThread::InternalThreadEntry()
 
 			pthread_mutex_unlock( &TCBMutex );
 		}
+
+		// Send one message to the scheduler saying we're done.
+		if (doWork == 0)
+		{
+			MsgStruct doneMessage;
+			doneMessage.messageType = MSG_TCBTHREADONE;
+			doneMessage.threadNumber = TCBThreadNumber;
+
+//			cout << __FUNCTION__  << "TCBThread " << TCBThreadNumber << " sending MSG_TCBTHREADONE message " << endl;
+
+			if(mq_send(toSchedmq, reinterpret_cast<char*>(&doneMessage), sizeof(MsgStruct), 0) < 0)
+			{
+				cout << __FUNCTION__  << " Error sending MSG_TCBTHREADONE message "
+							 << strerror( errno ) << endl;
+			}
+
+			-- doWork;
+		}
+
+		if (doWork == -2)
+		{
+			MsgStruct threadInitMessage;
+			threadInitMessage.messageType = MSG_TCBTHRINITIALIZED;
+			threadInitMessage.threadNumber = TCBThreadNumber;
+
+//					cout << __FUNCTION__  << "TCBThread " << TCBThreadNumber << " sending MSG_TCBTHRINITIALIZED message " << endl;
+
+					if(mq_send(toSchedmq, reinterpret_cast<char*>(&threadInitMessage), sizeof(MsgStruct), 0) < 0)
+					{
+						cout << __FUNCTION__  << " Error sending MSG_TCBTHREADONE message "
+									 << strerror( errno ) << endl;
+					}
+
+					-- doWork;
+		}
+
 	}
 
 	cout << __FUNCTION__  << "TCBThread " << TCBThreadNumber << " done" << endl;
@@ -87,11 +128,9 @@ void TCBThread::startNewComputePeriod ()
 	computeTimeExecutedms = 0;
 	periodExecutedms = 0;
 
-	pthread_mutex_lock(&TCBMutex);
-
 	doWork = computeTimeIterations;
 
-	pthread_mutex_unlock(&TCBMutex);
+//	cout << __FUNCTION__  << " doWork " << doWork << endl;
 }
 
 void TCBThread::stop()

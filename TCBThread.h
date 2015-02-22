@@ -15,9 +15,9 @@ public:
 
     virtual ~TCBThread() {/* empty */}
 
-    int getComputeTime() { return computeTimems; }
-    int getdeadline() { return deadlinems; }
-    int getperiodms() { return periodms; }
+    int getComputeTimems();
+    int getDeadlinems() { return deadlinems; }
+    int getPeriodms() { return periodms; }
 
     int getConfigThreadNumber() { return TCBThreadNumber; }
 
@@ -59,7 +59,7 @@ private:
 	timespec nextPeriod;
 	timespec nextDeadline;
 
-	long computeTimeIterations;
+	int computeTimeIterations;
 
 	bool running;
 

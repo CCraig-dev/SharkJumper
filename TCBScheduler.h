@@ -41,7 +41,8 @@ public:
 	{
 		RMS,
 		EDF,
-		LST
+		LST,
+		UNDEFINED
 	};
 
 	// Its a constructor Jim. - Spock.
@@ -75,7 +76,7 @@ private:
 
     void updatetimeSpec (timespec & time, int valuems);
 
-//	void rateMonotinicScheduler();
+	void rateMonotinicScheduler(TCBThread* runingTCBThread);
 //  void leastSlackTime();
 //  void EarliestDeadlineFirst();
 

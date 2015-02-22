@@ -12,7 +12,10 @@
 
 #define MAXMSGSIZE 4096
 
-#define MSG_STARTSIM 1
+#define MSG_UNDEFINED 0
+#define MSG_TCBTHRINITIALIZED 1
+#define MSG_STARTSIM 2
+#define MSG_TCBTHREADONE 3
 
 struct MsgStruct
 {
