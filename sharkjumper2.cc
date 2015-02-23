@@ -33,8 +33,12 @@ typedef union {
 
 int main(int argc, char *argv[]) {
 	std::cout << "Welcome to the QNX Momentics IDE" << std::endl;
-	   int channelID = 0;
 
+	   // Put in a tuning factor to allow the OS time to run.
+	   // 80% works on a 486.
+		const double tuningFactor = 0.8;
+
+	   int channelID = 0;
 	   int iterationsPerSecond = 0;
 
 	   TaskParam userInput;
@@ -46,7 +50,10 @@ int main(int argc, char *argv[]) {
 	   channelID = ChannelCreate(0);
 
 	   calculateComputationTime (channelID, iterationsPerSecond);
-	   cout << __FUNCTION__ << " iterationsPerSecond 2 " << iterationsPerSecond << endl;
+
+	   iterationsPerSecond = iterationsPerSecond * tuningFactor;
+
+	   cout << __FUNCTION__ << " tuned iterationsPerSecond "  << iterationsPerSecond << endl;
 
 	   // Howard's code will go here after we've tuned the computation time.
 	   userInput.configComputeTimems = 100;
@@ -64,11 +71,11 @@ int main(int argc, char *argv[]) {
 	   userInput.configDeadlinems = 900;
 	   threadConfigs.push_back(userInput);
 
-	   TCBScheduler scheduler (threadConfigs, iterationsPerSecond);
+	  TCBScheduler scheduler (threadConfigs, iterationsPerSecond);
 
 	   scheduler.run();
 
-	   sleep (5);
+	   sleep (2);
 
 	   scheduler.setSimTime(5);
 
@@ -92,7 +99,7 @@ int main(int argc, char *argv[]) {
 
 	   testThread.WaitForInternalThreadToExit();
 */
-	   sleep (90);
+	   sleep (10);
 	   cout << __FUNCTION__ << " done "<< endl;
 
 	return EXIT_SUCCESS;

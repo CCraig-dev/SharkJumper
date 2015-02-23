@@ -16,9 +16,10 @@ using namespace std;
 
 const int millisecPerSec = 1000;
 
-TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs, long iterationsPerSecond)
+TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs, int iterationsPerSecond)
 : toSchedmq(0),
   running (true),
+  simRunning(false),
   simTimeSec(0),
   strategy(UNDEFINED)
 {
@@ -167,6 +168,8 @@ void  TCBScheduler::InternalThreadEntry()
 			{
 				cout << __FUNCTION__  << " We got a MSG_STARTSIM message " << endl;
 
+				simRunning = true;
+
 				initializeSim();
 
 				// We're setting our baseline for timeing.
@@ -236,9 +239,45 @@ void  TCBScheduler::InternalThreadEntry()
 		}
 		else if (errno == ETIMEDOUT)
 		{
-			//clock_gettime(CLOCK_REALTIME, &tm);
-		    cout << "we got a timeout at " << nextWakeupTime.tv_sec << endl;
-		    nextWakeupTime.tv_sec += 1;
+			cout << "we got a timeout at " << nextWakeupTime.tv_sec << endl;
+/*
+			if (simRunning)
+			{
+				// if we've run out of time just suspend the thread and
+				// reschedule it.
+				runingTCBThread->suspend();
+
+				rateMonotinicScheduler(runingTCBThread);
+
+				// get the next thread
+				runingTCBThread = TCBThreadQueue.front();
+			    TCBThreadQueue.pop_front();
+
+				cout << " thread number " << runingTCBThread->getConfigThreadNumber() << endl;
+
+				// If the thread that needs to be run has a shorter or equal computation
+			    // time than the next thread in the queue set our timer for
+				// the computation time.
+				if( runingTCBThread->getComputeTimems () <= TCBThreadQueue.front()->getComputeTimems())
+				{
+					cout << __FUNCTION__  << "MSG_TCBTHREADONE choice 1" << endl;
+					updatetimeSpec (nextWakeupTime, runingTCBThread->getComputeTimems());
+				}
+				else
+				{
+					cout << __FUNCTION__  << "MSG_TCBTHREADONE choice 2" << endl;
+					nextWakeupTime = TCBThreadQueue.front()->getNextPeriod ();
+				}
+
+				// start the TCBThread Loop.
+				runingTCBThread->resume();
+			}
+			else
+			{
+			*/
+				//clock_gettime(CLOCK_REALTIME, &tm);
+				nextWakeupTime.tv_sec += 1;
+//			}
 		}
 	}
 
@@ -254,7 +293,7 @@ void  TCBScheduler::InternalThreadEntry()
 void TCBScheduler::rateMonotinicScheduler(TCBThread* runingTCBThread)
 {
 
-	cout << __FUNCTION__  << " called" << endl;
+//	cout << __FUNCTION__  << " called" << endl;
 
 	timespec timeTemp = runingTCBThread->getNextPeriod();
 
@@ -330,7 +369,7 @@ void TCBScheduler::rateMonotinicScheduler(TCBThread* runingTCBThread)
 
 	cout << endl;
 
-	cout << __FUNCTION__  << " done " << endl;
+//	cout << __FUNCTION__  << " done " << endl;
 }
 
 void TCBScheduler::run( )

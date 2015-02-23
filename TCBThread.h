@@ -11,7 +11,7 @@ class TCBThread: public MyThread
 public:
 	// Its a constructor Jim. - Spock.
 	TCBThread(int configComputeTimems, int configPeriodms, int configDeadlinems,
-			  long iterationsPerSecond, int configThreadNumber);
+			  int iterationsPerSecond, int configThreadNumber);
 
     virtual ~TCBThread() {/* empty */}
 
@@ -54,7 +54,7 @@ private:
 
 	int computeTimeExecutedms;
 	int periodExecutedms;
-	long doWork;
+	int doWork;
 
 	timespec nextPeriod;
 	timespec nextDeadline;

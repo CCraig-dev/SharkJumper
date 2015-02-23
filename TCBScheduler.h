@@ -46,7 +46,7 @@ public:
 	};
 
 	// Its a constructor Jim. - Spock.
-	TCBScheduler(std::vector <TaskParam>& threadConfigs, long iterationsPerSecond);
+	TCBScheduler(std::vector <TaskParam>& threadConfigs, int iterationsPerSecond);
 
     virtual ~TCBScheduler() {/* empty */}
 
@@ -83,6 +83,7 @@ private:
 	mqd_t toSchedmq;
 
 	bool running;
+	bool simRunning;
 
 	int simTimeSec;
 

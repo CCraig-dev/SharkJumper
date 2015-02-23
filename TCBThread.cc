@@ -5,12 +5,14 @@
 #include <iostream.h>
 #include <unistd.h>
 
+#include <limits>
+
 using namespace std;
 
 const int millisecPerSec = 1000;
 
 TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
-		              int configDeadlinems, long iterationsPerSecond, int configThreadNumber)
+		              int configDeadlinems, int iterationsPerSecond, int configThreadNumber)
 :computeTimems(configComputeTimems),
  deadlinems(configDeadlinems),
  periodms(configPeriodms),
@@ -19,7 +21,6 @@ TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
  periodExecutedms(0),
  doWork(-2)
 {
-
 	computeTimeIterations = iterationsPerSecond / millisecPerSec * configComputeTimems;
 
 	memset(&nextPeriod, 0, sizeof(nextPeriod));
