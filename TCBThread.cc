@@ -115,7 +115,7 @@ void TCBThread::run( )
 
 void TCBThread::setNextDeadline (timespec & newDeadline)
 {
-	nextPeriod = newDeadline;
+	nextDeadline = newDeadline;
 }
 
 void TCBThread::setNextPeriod (timespec & newPeriod)

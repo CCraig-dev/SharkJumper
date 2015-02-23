@@ -36,7 +36,7 @@ TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs, long iteratio
 
 void TCBScheduler::initializeSim()
 {
-	cout << __FUNCTION__  << " started " << endl;
+//	cout << __FUNCTION__  << " started " << endl;
 
 	timespec vectorTemp;
 	bool found = false;
@@ -49,7 +49,6 @@ void TCBScheduler::initializeSim()
 		TCBThreads[i].setNextPeriod(vectorTemp);
 
 		// Set the next deadline for each thread.
-		vectorTemp = startSimTime;
 		updatetimeSpec (vectorTemp, TCBThreads[i].getDeadlinems());
 		TCBThreads[i].setNextDeadline(vectorTemp);
 
@@ -85,7 +84,7 @@ void TCBScheduler::initializeSim()
 			// The deadline is greater than any of the items in the list.
 			if (found == false)
 			{
-				cout << __FUNCTION__  << " adding it to the back " << TCBThreads[i].getConfigThreadNumber() << endl;
+//				cout << __FUNCTION__  << " adding it to the back " << TCBThreads[i].getConfigThreadNumber() << endl;
 
 				TCBThreadQueue.push_back (&TCBThreads[i]);
 			}
@@ -94,14 +93,14 @@ void TCBScheduler::initializeSim()
 
 //	cout << __FUNCTION__  << " TCBThreadQueue.size() " << TCBThreadQueue.size() << endl;
 	// sanity check for RMS.
-//	 for (std::list<TCBThread*>::iterator iter=TCBThreadQueue.begin(); iter != TCBThreadQueue.end(); ++iter)
-//	 {
-//	    cout << ' ' << (*iter)->getConfigThreadNumber();
-//	 }
+	 for (std::list<TCBThread*>::iterator iter=TCBThreadQueue.begin(); iter != TCBThreadQueue.end(); ++iter)
+	 {
+	    cout << ' ' << (*iter)->getConfigThreadNumber();
+	 }
 
-//	 std::cout << '\n';
+	 std::cout << '\n';
 
-	 cout << __FUNCTION__  << " end " << endl;
+//	 cout << __FUNCTION__  << " end " << endl;
 }
 
 // this is where we do all the work.
@@ -178,6 +177,9 @@ void  TCBScheduler::InternalThreadEntry()
 				runingTCBThread = TCBThreadQueue.front();
 				TCBThreadQueue.pop_front();
 
+				//cout << " TCBThreadQueue.size() " << TCBThreadQueue.size() << endl;
+				cout << " thread number " << runingTCBThread->getConfigThreadNumber() << endl;
+
 				// Since the first thread in the queue is the highest priority
 				// just run it.
 
@@ -190,7 +192,6 @@ void  TCBScheduler::InternalThreadEntry()
 			else if (message->messageType == MSG_TCBTHREADONE)
 			{
 				cout << __FUNCTION__  << " We got a MSG_TCBTHREADONE message message from thread " << message->threadNumber << endl;
-				cout << __FUNCTION__  << " msgSize " << msgSize << endl;
 
 				// set the thread up to run again.
 				runingTCBThread->suspend();
@@ -205,14 +206,33 @@ void  TCBScheduler::InternalThreadEntry()
 				updatetimeSpec (temp, runingTCBThread->getDeadlinems());
 				runingTCBThread->setNextDeadline(temp);
 
+				// Insert it in the proper position in the TCBThreadQueue based on the
+				// agorithm.
 				rateMonotinicScheduler(runingTCBThread);
 
-				struct mq_attr attributes;
-				mq_getattr(toSchedmq, &attributes);
+				// Pop the next thread to run off the queue.
+				runingTCBThread = TCBThreadQueue.front();
+				TCBThreadQueue.pop_front();
 
-				cout << __FUNCTION__  << " attributes.mq_curmsgs " << attributes.mq_curmsgs << endl;
+				cout << " thread number " << runingTCBThread->getConfigThreadNumber() << endl;
+
+				// If the thread that needs to be run has a shorter or equal computation
+				// time than the next thread in the queue set our timer for
+				// the computation time.
+				if( runingTCBThread->getComputeTimems () <= TCBThreadQueue.front()->getComputeTimems())
+				{
+					cout << __FUNCTION__  << "MSG_TCBTHREADONE choice 1" << endl;
+					updatetimeSpec (nextWakeupTime, runingTCBThread->getComputeTimems());
+				}
+				else
+				{
+					cout << __FUNCTION__  << "MSG_TCBTHREADONE choice 2" << endl;
+					nextWakeupTime = TCBThreadQueue.front()->getNextPeriod ();
+				}
+
+				// start the TCBThread Loop.
+				runingTCBThread->resume();
 			}
-
 		}
 		else if (errno == ETIMEDOUT)
 		{
@@ -236,7 +256,9 @@ void TCBScheduler::rateMonotinicScheduler(TCBThread* runingTCBThread)
 
 	cout << __FUNCTION__  << " called" << endl;
 
-	timespec timeTemp = runingTCBThread->getNextDeadline();
+	timespec timeTemp = runingTCBThread->getNextPeriod();
+
+//	cout << __FUNCTION__  << " timeTemp sec " << timeTemp.tv_sec << " tv_ns " << timeTemp.tv_sec << endl;
 
 	// Since everything is ready at the start of the simulation, emplace them
 	// shortest computation time first order.
@@ -257,8 +279,10 @@ void TCBScheduler::rateMonotinicScheduler(TCBThread* runingTCBThread)
 		{
 
 			listTemp = (*iter)-> getNextPeriod();
+//			cout << __FUNCTION__  << " listTemp sec " << listTemp.tv_sec << " tv_ns " << listTemp.tv_sec << endl;
+
 //				cout << __FUNCTION__  << " TCBThreads[i].getComputeTime() " << TCBThreads[i].getComputeTime() << endl;
-//				cout << __FUNCTION__  << " (*iter)->getComputeTime() " << (*iter)->getComputeTime() << endl;
+//				cout << __FUNCTION__  << " (*iter)->getNextPeriod() " << (*iter)->getNextPeriod() << endl;
 			if (timeTemp.tv_sec < listTemp.tv_sec)
 			{
 //					cout << __FUNCTION__  << " list has stuff in it " << TCBThreads[i].getConfigThreadNumber() << endl;
@@ -297,7 +321,7 @@ void TCBScheduler::rateMonotinicScheduler(TCBThread* runingTCBThread)
 		}
 	}
 
-	cout << __FUNCTION__  << " TCBThreadQueue.size() " << TCBThreadQueue.size() << endl;
+//	cout << __FUNCTION__  << " TCBThreadQueue.size() " << TCBThreadQueue.size() << endl;
 		// sanity check for RMS.
 	for (std::list<TCBThread*>::iterator iter=TCBThreadQueue.begin(); iter != TCBThreadQueue.end(); ++iter)
 	{
@@ -363,6 +387,7 @@ void TCBScheduler::updatetimeSpec (timespec & time, int valuems)
 //	cout << __FUNCTION__  << " valuems " << valuems << endl;
 
 	tempns = time.tv_nsec + (valuems * nsPerms);
+//	cout << __FUNCTION__  << " tempns " << tempns << " tempns " << tempns << endl;
 
 	if (tempns < nsPerSec)
 	{
