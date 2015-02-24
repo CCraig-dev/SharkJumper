@@ -77,6 +77,9 @@ private:
     void updatetimeSpec (timespec & time, int valuems);
 
 	void rateMonotinicScheduler(TCBThread* runingTCBThread);
+
+	void rateMonotinicSchedulerIncompleteTask(TCBThread* runingTCBThread);
+
 //  void leastSlackTime();
 //  void EarliestDeadlineFirst();
 
@@ -95,6 +98,7 @@ private:
 	std::vector <TCBThread> TCBThreads;
 
 	std::list <TCBThread*> TCBThreadQueue;
+	std::list <TCBThread*> startTCBThreadQueue;
 
 	// Pointer this classe's message queue.
 };

@@ -28,12 +28,19 @@ TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
 
 	running = true;
 
+//	computationInterruped = false;
+
 	toSchedmq = 0;
 }
 
 int TCBThread::getComputeTimems()
 {
 	return computeTimems;
+}
+
+bool TCBThread::getcomputationInterruped()
+{
+	return computationInterruped;
 }
 
 // this is where we do all the work.
@@ -114,6 +121,12 @@ void TCBThread::run( )
 	MyThread::StartInternalThread();
 }
 
+
+void TCBThread::setcomputationInterruped(bool newComputationInterrupted)
+{
+	computationInterruped = newComputationInterrupted;
+}
+
 void TCBThread::setNextDeadline (timespec & newDeadline)
 {
 	nextDeadline = newDeadline;
@@ -122,6 +135,11 @@ void TCBThread::setNextDeadline (timespec & newDeadline)
 void TCBThread::setNextPeriod (timespec & newPeriod)
 {
 	nextPeriod = newPeriod;
+}
+
+void TCBThread::setComputeTimeExecuted(int newComputeTimeExecutedms)
+{
+	computeTimeExecutedms = newComputeTimeExecutedms;
 }
 
 void TCBThread::startNewComputePeriod ()

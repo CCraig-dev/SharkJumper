@@ -21,9 +21,13 @@ public:
 
     int getConfigThreadNumber() { return TCBThreadNumber; }
 
+    int getComputeTimeExecuted() { return computeTimeExecutedms;}
+
     timespec getNextPeriod () { return nextPeriod; }
 
     timespec getNextDeadline () {return nextDeadline; }
+
+    void setComputeTimeExecuted(int newComputeTimeExecutedms);
 
     void setNextPeriod (timespec & newPeriod);
     void setNextDeadline (timespec & newDeadline);
@@ -35,7 +39,11 @@ public:
 
 	void suspend ();
 
+	bool getcomputationInterruped();
+
 	void resume ();
+
+	void setcomputationInterruped(bool newComputationInterrupted);
 
 	void stop();
 
@@ -62,6 +70,7 @@ private:
 	int computeTimeIterations;
 
 	bool running;
+	bool computationInterruped;
 
 	mqd_t toSchedmq;
 

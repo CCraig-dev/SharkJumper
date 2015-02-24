@@ -51,6 +51,8 @@ int main(int argc, char *argv[]) {
 
 	   calculateComputationTime (channelID, iterationsPerSecond);
 
+	   // tune iterationsPerSecond so that the OS has time to run without blowing
+	   // deadlines.
 	   iterationsPerSecond = iterationsPerSecond * tuningFactor;
 
 	   cout << __FUNCTION__ << " tuned iterationsPerSecond "  << iterationsPerSecond << endl;
@@ -73,9 +75,9 @@ int main(int argc, char *argv[]) {
 
 	  TCBScheduler scheduler (threadConfigs, iterationsPerSecond);
 
-	   scheduler.run();
+	  scheduler.run();
 
-	   sleep (2);
+	   sleep (3);
 
 	   scheduler.setSimTime(5);
 
