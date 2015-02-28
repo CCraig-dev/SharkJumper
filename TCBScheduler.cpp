@@ -3,6 +3,7 @@
  *
  *  Created on: Feb 18, 2015
  *      Author: hxr5656
+ *      Contributor: clc1774
  */
 
 #include "TCBScheduler.h"
@@ -18,12 +19,12 @@
 
 using namespace std;
 
-TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs, int iterationsPerSecond)
+TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs, int totalRunTime, TCBScheduler::SchedulingStrategy selectedStrategy, int tunedIterationsPerSecond)
 : toSchedmq(0),
   running (true),
   simRunning(false),
-  simTimeSec(0),
-  strategy(UNDEFINED)
+  simTimeSec(totalRunTime),
+  strategy(selectedStrategy)
 {
 	// configure the threads and add them to the scheduler
 	for(unsigned int i=0; i < threadConfigs.size(); ++i)
@@ -31,7 +32,7 @@ TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs, int iteration
 		TCBThreads.push_back(TCBThread(threadConfigs[i].configComputeTimems,
 				                      threadConfigs[i].configPeriodms,
 				                      threadConfigs[i].configDeadlinems,
-				                      iterationsPerSecond, i));
+				                      tunedIterationsPerSecond, i));
 	}
 }
 
@@ -80,7 +81,7 @@ void  TCBScheduler::InternalThreadEntry()
 	clock_gettime(CLOCK_REALTIME, &nextWakeupTime);
 
 	// I'm using this to increment the currentSimTimems and set the timer.
-	const int simTimeIncrementms = 1;
+	const int simTimeIncrementms = 50;
 
 	while (running)
 	{
@@ -128,10 +129,10 @@ void  TCBScheduler::InternalThreadEntry()
 				// This message is asynchronous so we dont' update the simulation
 				// times.  If we blow past nextWakeupTime then mq_timedreceive will
 				// immediately return.
-//				cout << __FUNCTION__  << " MSG_TCBTHREADONE message thread " << message->threadNumber << endl;
+				cout << __FUNCTION__  << " MSG_TCBTHREADONE message thread " << message->threadNumber << endl;
 
 				// this is how we will log stuff.
-				trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " MSG_TCBTHREADONE message thread ", message->threadNumber);
+				//trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " MSG_TCBTHREADONE message thread ", message->threadNumber);
 
 				int nextPeriod = 0;
 
@@ -178,9 +179,9 @@ void  TCBScheduler::InternalThreadEntry()
 
 						runingTCBThread = temp;
 						runingTCBThread->resume();
-//						cout << " change to thread number " << runingTCBThread->getTCBThreadID() << endl;
+						cout << " change to thread number " << runingTCBThread->getTCBThreadID() << endl;
 
-						trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " change to thread number ", runingTCBThread->getTCBThreadID());
+						//trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " change to thread number ", runingTCBThread->getTCBThreadID());
 					}
 				 }
 

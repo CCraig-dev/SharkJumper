@@ -1,3 +1,5 @@
+/*
+
 #include <cstdlib>
 #include <iostream>
 #include <pthread.h>
@@ -27,8 +29,6 @@ void* measureTime( void* arg );
 typedef union {
         struct _pulse   pulse;
 
-        /* your other message structures would go
-           here too */
 } my_message_t;
 
 int main(int argc, char *argv[]) {
@@ -58,49 +58,30 @@ int main(int argc, char *argv[]) {
 	   cout << __FUNCTION__ << " tuned iterationsPerSecond "  << iterationsPerSecond << endl;
 
 	   // Howard's code will go here after we've tuned the computation time.
-	   userInput.configComputeTimems = 10;
-	   userInput.configPeriodms = 30;
-	   userInput.configDeadlinems = 20;
+	   userInput.configComputeTimems = 100;
+	   userInput.configPeriodms = 300;
+	   userInput.configDeadlinems = 200;
 	   threadConfigs.push_back(userInput);
 
-	   userInput.configComputeTimems = 20;
-	   userInput.configPeriodms = 50;
-	   userInput.configDeadlinems = 40;
+	   userInput.configComputeTimems = 200;
+	   userInput.configPeriodms = 500;
+	   userInput.configDeadlinems = 400;
 	   threadConfigs.push_back(userInput);
 
-	   userInput.configComputeTimems = 10;
-	   userInput.configPeriodms = 100;
-	   userInput.configDeadlinems = 90;
+	   userInput.configComputeTimems = 100;
+	   userInput.configPeriodms = 1000;
+	   userInput.configDeadlinems = 900;
 	   threadConfigs.push_back(userInput);
 
-	  TCBScheduler scheduler (threadConfigs, iterationsPerSecond);
+	  TCBScheduler scheduler (threadConfigs,0, TCBScheduler::UNDEFINED, iterationsPerSecond);
 
 	  scheduler.run();
 
-	   sleep (2);
+	  sleep (1);
 
-	   scheduler.setSimTime(5);
+	  scheduler.setSimTime(5);
 
-	   scheduler.startSim();
-
-		// Debug code ignore this.
-/*
-	   TCBThread testThread(100, 200, 150, iterationsPerSecond, 1);
-
-	   testThread.suspend ();
-
-	   testThread.run();
-
-	   sleep(1);
-
-	   testThread.resume();
-
-	   sleep(1);
-
-	   testThread.stop();
-
-	   testThread.WaitForInternalThreadToExit();
-*/
+	  scheduler.startSim();
 	   sleep (50);
 	   cout << __FUNCTION__ << " done "<< endl;
 
@@ -148,22 +129,22 @@ bool calculateComputationTime (int channelID, int &iterationsPerSecond)
 	   timer_create(CLOCK_REALTIME, &event, &timer_id);
 
 	   itime.it_value.tv_sec = 1;
-	   /* 500 million nsecs = .5 secs */
+	   // 500 million nsecs = .5 secs
 	   itime.it_value.tv_nsec = 000000000;
 	   itime.it_interval.tv_sec = 1;
-	   /* 500 million nsecs = .5 secs */
+	   // 500 million nsecs = .5 secs
 	   itime.it_interval.tv_nsec = 000000000;
 	   timer_settime(timer_id, 0, &itime, NULL);
 
-	   /*
-	    * As of the timer_settime(), we will receive our pulse
-	    * in 1.5 seconds (the itime.it_value) and every 1.5
-	    * seconds thereafter (the itime.it_interval)
-	    */
+	   //
+	    // As of the timer_settime(), we will receive our pulse
+	    // in 1.5 seconds (the itime.it_value) and every 1.5
+	    // seconds thereafter (the itime.it_interval)
+	    //
 
 	   while (keepRunning == true) {
 	       rcvid = MsgReceive(channelID, &msg, sizeof(msg), NULL);
-	       if (rcvid == 0) { /* we got a pulse */
+	       if (rcvid == 0) { // we got a pulse
 	            if (msg.pulse.code == MY_PULSE_CODE) {
 	            	cout << __FUNCTION__ << "we got a pulse from our timer\n" << endl;
 	            	if(timingMutexLocked)
@@ -186,8 +167,8 @@ bool calculateComputationTime (int channelID, int &iterationsPerSecond)
 
 	            		cout << __FUNCTION__ << " iterationsPerSecond 1 "  << iterationsPerSecond << endl;
 	            	}
-	            } /* else other pulses ... */
-	       } /* else other messages ... */
+	            }
+	       }
 	   }
 
 	   // Please dont' touch this I don't quite know what it will do.
@@ -229,3 +210,4 @@ void* measureTime( void* arg )
 
     return NULL;
 }
+*/

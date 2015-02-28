@@ -2,9 +2,9 @@
  * Shell.cc
  *
  *  Created on: Feb 16, 2015
- *      Author: Conor
+ *      Author: clc1774
  */
-/*
+
 #include "TCBScheduler.h"
 
 #include <cstdlib>
@@ -56,11 +56,12 @@ string promptForCommandInput(string strCommand);
 int detectIterations();
 bool calculateComputationTime(int channelID, int &iterationsPerSecond);
 void* measureTime(void* arg);
+void setStateHard();
 
 int main(int argc, char *argv[]) {
 
 	cout << "Welcome to the Group 2 Scheduling Project!\n";
-	usage(0);
+	cout << "Type 'usage' for program instructions. \n";
 
 	// After the user gets usage, begin the input loop
 	 // This loop creates two child loops which will prompt the user for a
@@ -108,6 +109,19 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	return 0;
+}
+
+//Set hardcoded values for debug purposes
+void setStateHard(){
+	threadConfigs.clear();
+	TaskParam one = TaskParam(10,30,20);
+	TaskParam two = TaskParam(20,50,40);
+	TaskParam three = TaskParam(10,100,90);
+	threadConfigs.push_back(one);
+	threadConfigs.push_back(two);
+	threadConfigs.push_back(three);
+
+	selectedStrategy = TCBScheduler::RMS;
 }
 
 bool schedulabilityTest(int compute, int period, int deadline) {
@@ -274,8 +288,10 @@ string promptForCommandInput(string strCommand) {
 
 bool isInstruction(string strCommand) {
 	// Begin whitelist
-	if (strCommand.compare("exit") == 0) {
+	if (strCommand.compare("hard") == 0) {
 		return true;
+	} else if (strCommand.compare("exit") == 0) {
+			return true;
 	} else if (strCommand.compare("usage") == 0) {
 		return true;
 	} else if (strCommand.compare("run") == 0) {
@@ -360,7 +376,14 @@ bool validateRun() {
 
 void fireInstruction(string strCommand) {
 	//Textual base cases
-	if (strCommand.compare("exit") == 0) {
+	if(strCommand.compare("hard") == 0){
+		//Hardcode threadConfigs
+		//set iterations time
+		//set strategy to RMS
+		//set runtime to 5s
+		setStateHard();
+
+	} else if (strCommand.compare("exit") == 0) {
 		cout << "Program is exiting.\n";
 		exit(0);
 	} else if (strCommand.compare("usage") == 0) {
@@ -381,21 +404,17 @@ void fireInstruction(string strCommand) {
 			}
 
 			// Invoke Scheduler
-			cout << "Run state is valid: Invoking Scheduler...\n";
+			cout << "Run state is valid...\n";
 			int iterationsPerSecond = detectIterations();
 			sleep(2);
-			cout << "Iterations per second: " << iterationsPerSecond << "\n";
-
-			//TCBScheduler scheduler(threadConfigs, runTime, selectedStrategy, iterationsPerSecond);
-			//scheduler.run();
-			//sleep(2);
-			//scheduler.setSimTime(runTime);
+			TCBScheduler scheduler(threadConfigs, runTime, selectedStrategy, iterationsPerSecond);
+			scheduler.run();
+			sleep(2);
+			scheduler.setSimTime(runTime);
 			//scheduler.startSim();
-			//sleep(10);
 
-			cout << __FUNCTION__ << " done " << endl;
 
-			return;
+			exit(0);
 
 		} else {
 			cout << "ERROR: Cannot run, parameters not set.\n";
@@ -436,7 +455,7 @@ void usage(int section) {
 	}
 }
 
-/ Helper print function
+// Helper print function
 string getStringFromAlg(TCBScheduler::SchedulingStrategy selectedStrategy) {
 	switch (selectedStrategy) {
 	case TCBScheduler::RMS:
@@ -455,7 +474,7 @@ string getStringFromAlg(TCBScheduler::SchedulingStrategy selectedStrategy) {
 int detectIterations() {
 	int channelID = 0;
 	int iterations = 0;
-	int tuningFactor = 0.8;
+	double tuningFactor = 0.75;
 	// Set up a message channel for this process.
 	// You'll use this for getting messages back
 	// from the scheduler and for figuring out how may loop iterations in 1 second.
@@ -464,7 +483,7 @@ int detectIterations() {
 	calculateComputationTime(channelID, iterations);
 
 	iterations *= tuningFactor;
-	cout << __FUNCTION__ << " tuned iterationsPerSecond " << iterations << endl;
+	cout << "The tuned iterationsPerSecond by using factor (" << tuningFactor << ") : " << iterations << endl;
 
 	return iterations;
 }
@@ -478,9 +497,6 @@ bool calculateComputationTime(int channelID, int &iterationsPerSecond) {
 	int rcvid;
 	timer_t timer_id;
 	pthread_t thread_tid;
-
-	// hurt to set this again just in case the code changes.
-	iterationsPerSecond = 0;
 
 	// gotta initialize my mutex before starting.
 	pthread_mutex_init(&timimgMutex, NULL);
@@ -516,10 +532,9 @@ bool calculateComputationTime(int channelID, int &iterationsPerSecond) {
 		rcvid = MsgReceive(channelID, &msg, sizeof(msg), NULL);
 		if (rcvid == 0) {
 			if (msg.pulse.code == MY_PULSE_CODE) {
-				cout << __FUNCTION__ << "we got a pulse from our timer\n"
-						<< endl;
+				//cout << __FUNCTION__ << "we got a pulse from our timer\n" << endl;
 				if (timingMutexLocked) {
-					cout << __FUNCTION__ << "unlocking the mutex\n" << endl;
+					//cout << __FUNCTION__ << "unlocking the mutex\n" << endl;
 					pthread_mutex_unlock(&timimgMutex);
 					timingMutexLocked = false;
 				} else if (keepRunning == true) {
@@ -533,8 +548,7 @@ bool calculateComputationTime(int channelID, int &iterationsPerSecond) {
 					iterationsPerSecond = iterationsPerSecondCounter;
 					pthread_mutex_unlock(&timimgMutex);
 
-					cout << __FUNCTION__ << " iterationsPerSecond 1 "
-							<< iterationsPerSecond << endl;
+					//cout << __FUNCTION__ << " iterationsPerSecond 1 " << iterationsPerSecond << endl;
 				}
 			} // else other pulses ...
 		} // else other messages ...
@@ -550,19 +564,19 @@ bool calculateComputationTime(int channelID, int &iterationsPerSecond) {
 		cout << "Timer: Error in timer_delete()" << endl;
 	}
 
-	cout << __FUNCTION__ << " waiting for thread to join " << endl;
+	//cout << __FUNCTION__ << " waiting for thread to join " << endl;
 
 	if (pthread_join(thread_tid, NULL)) {
 		cout << __FUNCTION__ << "Could not join thread. " " << endl";
 	}
 
-	cout << __FUNCTION__ << " end " << endl;
-	;
+	//cout << __FUNCTION__ << " end " << endl;
+
 	return true;
 }
 
 void* measureTime(void* arg) {
-	cout << __FUNCTION__ << " begin " << endl;
+	//cout << __FUNCTION__ << " begin " << endl;
 
 	int *iterationsPerSecondCounter = (int*)arg;
 	while (keepRunning == true) {
@@ -572,10 +586,7 @@ void* measureTime(void* arg) {
 		pthread_mutex_unlock(&timimgMutex);
 	}
 
-	cout << __FUNCTION__ << " end " << endl;
+	//cout << __FUNCTION__ << " end " << endl;
 
 	return NULL;
 }
-
-
-*/
