@@ -17,6 +17,9 @@
 #define MSG_STARTSIM 2
 #define MSG_TCBTHREADONE 3
 
+// Used for time calculations
+#define MILISECPERSEC 1000
+
 struct MsgStruct
 {
 	int messageType;

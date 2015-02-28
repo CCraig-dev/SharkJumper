@@ -9,72 +9,277 @@
 class TCBThread: public MyThread
 {
 public:
-	// Its a constructor Jim. - Spock.
-	TCBThread(int configComputeTimems, int configPeriodms, int configDeadlinems,
-			  int iterationsPerSecond, int configThreadNumber);
 
+	/**
+	 * Function: TCBThread
+	 *
+	 *	Constructor
+	 *
+	 * @param configComputeTimems computation time of the thread from the user.
+	 * @param configPeriodms of the thread from the user.
+	 * @param configDeadlinems deadline of the thread from the user.
+	 * @param iterationsPerSecond value derived after 1 second of c++ looping.
+	 * @param configThreadNumber The ID of the task thread.
+	 *
+	 */
+	TCBThread(int configComputeTimems, int configPeriodms, int configDeadlinems,
+			  int iterationsPerSecond, int configTCBThreadID);
+
+	/**
+	 * Function: ~TCBThread
+	 *
+	 * Destructor
+	 *
+	 */
     virtual ~TCBThread() {/* empty */}
 
+	/**
+	 * Function: getComputeTimeExecuted
+	 *
+	 *	Gets the amount of time the thread has actually executed.
+	 *
+	 * @return returns amount of time the thread has executed.
+	 *
+	 */
+    int getComputeTimeExecuted();
+
+	/**
+	 * Function: getComputeTimems
+	 *
+	 *	Gets the configured compute time of the thread.
+	 *
+	 * @return returns the configured compute time of the thread.
+	 *
+	 */
     int getComputeTimems();
-    int getDeadlinems() { return deadlinems; }
-    int getPeriodms() { return periodms; }
 
-    int getConfigThreadNumber() { return TCBThreadNumber; }
+	/**
+	 * Function: getDeadlinems
+	 *
+	 *	Gets the configured deadline of the thread.
+	 *
+	 * @return returns the configured deadline of the thread.
+	 *
+	 */
+    int getDeadlinems();
 
-    int getComputeTimeExecuted() { return computeTimeExecutedms;}
+	/**
+	 * Function: getPeriodms
+	 *
+	 *	Gets the configured deadline of the thread.
+	 *
+	 * @return returns the configured period of the thread.
+	 *
+	 */
+    int getPeriodms();
 
-    timespec getNextPeriod () { return nextPeriod; }
+	/**
+	 * Function: getTCBThreadID
+	 *
+	 *	Gets the TCBThreadID of the thread.
+	 *
+	 * @return returns the configured TCBThreadID.
+	 *
+	 */
+    int getTCBThreadID();
 
-    timespec getNextDeadline () {return nextDeadline; }
+	/**
+	 * Function: getNextDeadline
+	 *
+	 *	Gets the calculated next period the thread
+	 *	is supposed to run in.  The deadline is
+	 *	calculated from the start of the simulation
+	 *	which is time 0.
+	 *
+	 * @return returns the next deadline.
+	 *
+	 */
+    int getNextDeadline ();
 
-    void setComputeTimeExecuted(int newComputeTimeExecutedms);
+	/**
+	 * Function: getNextPeriod
+	 *
+	 *	Gets the calculated next period the thread
+	 *	is supposed to run in.  The period is
+	 *	calculated from the start of the simulation
+	 *	which is time 0.
+	 *
+	 * @return returns the next Period.
+	 *
+	 */
+    int getNextPeriod ();
 
-    void setNextPeriod (timespec & newPeriod);
-    void setNextDeadline (timespec & newDeadline);
+	/**
+	 * Function: getThreadPriority
+	 *
+	 *	Gets the calculated priority of a thread.  This is dependent on the
+	 *	scheduling algorithm.
+	 *
+	 * @return 	 * @return returns calculated thread priority.
+	 *
+	 */
+    double getThreadPriority();
 
-	// function that is called to run the banks main loop
-	void run();
-
-	void startNewComputePeriod ();
-
-	void suspend ();
-
-	bool getcomputationInterruped();
-
+	/**
+	 * Function: suspend
+	 *
+	 *	This function is called to resume the "work" done in the thread.
+	 *
+	 * @return none.
+	 *
+	 */
 	void resume ();
 
+	/**
+	 * Function: run
+	 *
+	 *	Starts the thread running.
+	 *
+	 * @return none.
+	 *
+	 */
+	void run();
+
+	/**
+	 * Function: setComputeTimeExecuted
+	 *
+	 *	Sets the amount of time the thread has executed.
+	 *
+	 * @return none.
+	 *
+	 */
+    void setComputeTimeExecuted(int newComputeTimeExecutedms);
+
+	/**
+	 * Function: setNextDeadline
+	 *
+	 *	Sets the calculated next deadline the thread
+	 *	is supposed to run in.  The deadline is
+	 *	calculated from the start of the simulation
+	 *	which is time 0.
+	 *
+	 * @return none.
+	 *
+	 */
+    void setNextDeadline (int newDeadline);
+
+	/**
+	 * Function: setNextPeriod
+	 *
+	 *	Sets the calculated next period the thread
+	 *	is supposed to run in.  The period is
+	 *	calculated from the start of the simulation
+	 *	which is time 0.
+	 *
+	 * @return none.
+	 *
+	 */
+    void setNextPeriod (int newPeriod);
+
+	/**
+	 * Function: setThreadPriority
+	 *
+	 *	Sets the calculated priority of a thread.  This is dependent on the
+	 *	scheduling algorithm.
+	 *
+	 * @return none.
+	 *
+	 */
+    void setThreadPriority (double newThreadPriority);
+
+	/**
+	 * Function: startNewComputePeriod
+	 *
+	 *	This function is called once the "work" is done. It resets the
+	 *	the loop variable and any variables related to computation time.
+	 *
+	 * @return none.
+	 *
+	 */
+	void startNewComputePeriod ();
+
+	/**
+	 * Function: suspend
+	 *
+	 *	This function is called to pause the "work" done in the thread.
+	 *
+	 * @return none.
+	 *
+	 */
+	void suspend ();
+
+
+	// not sure if we need this any more.
+	bool getcomputationInterruped();
+
+	// not sure if we need this any more.
 	void setcomputationInterruped(bool newComputationInterrupted);
 
+	/**
+	 * Function: stop
+	 *
+	 *	This function is called terminate the thread.
+	 *
+	 * @return none.
+	 *
+	 */
 	void stop();
 
-	// debug functions this will die in the release version.
-	long getdoWork() { return doWork; }
 
 private:
-    // Implementation of our code from mythreadclass.h
+
+	// Implementation of our code from mythreadclass.h
 	virtual void InternalThreadEntry();
 
+
+	// Holds the thread's compute time.
 	int computeTimems;
+
+	// Holds the thread's deadline.
 	int deadlinems;
+
+	// Holds the thread's period.
 	int periodms;
 
-	int TCBThreadNumber;
+	// Holds the thread's unique threadID.
+	int TCBThreadID;
 
+	// Holds the priority of the threads for the algorithms. Whether a low
+	// value represents a high priority or vice versa is dependent on the
+	// algorithm.
+	double threadPriority;
+
+	// Holds the amount of compute time executed.  Value is between 0 and computeTimems;
 	int computeTimeExecutedms;
-	int periodExecutedms;
+
+	// This is a counter that deincrements while work is being done.
 	int doWork;
 
-	timespec nextPeriod;
-	timespec nextDeadline;
+	// Holds the amount of the period executed.  Value is between 0 and periodms;
+	int periodExecutedms;
 
+	// Holds the calculated next period the thread is supposed to run in.
+	// The period is calculated from the start of the simulation which is time 0.
+	int nextPeriodms;
+
+	// Holds the calculated next deadline the thread is supposed to run in.
+	// The deadline is calculated from the start of the simulation which is time 0.
+	int nextDeadlinems;
+
+	// This variable controls the running of the main thread loop.
+	bool running;
+
+	// Holds the number of iterations the "work" loop is supposed to run for.
+	// It equivalent in time to computeTimems.
 	int computeTimeIterations;
 
-	bool running;
+	// Not sure if we need this.
 	bool computationInterruped;
 
+	// This is a reference to the incoming message queue in TCBscheduler.
 	mqd_t toSchedmq;
 
-	// Protects the customerQueue;
+	// This is used to start and stop the "work" the thread is supposed to do.
 	pthread_mutex_t TCBMutex;
 };
 #endif

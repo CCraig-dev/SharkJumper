@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
 	   // Put in a tuning factor to allow the OS time to run.
 	   // 80% works on a 486.
-		const double tuningFactor = 0.8;
+		const double tuningFactor = 0.75;
 
 	   int channelID = 0;
 	   int iterationsPerSecond = 0;
@@ -58,26 +58,26 @@ int main(int argc, char *argv[]) {
 	   cout << __FUNCTION__ << " tuned iterationsPerSecond "  << iterationsPerSecond << endl;
 
 	   // Howard's code will go here after we've tuned the computation time.
-	   userInput.configComputeTimems = 100;
-	   userInput.configPeriodms = 300;
-	   userInput.configDeadlinems = 200;
+	   userInput.configComputeTimems = 10;
+	   userInput.configPeriodms = 30;
+	   userInput.configDeadlinems = 20;
 	   threadConfigs.push_back(userInput);
 
-	   userInput.configComputeTimems = 200;
-	   userInput.configPeriodms = 500;
-	   userInput.configDeadlinems = 400;
+	   userInput.configComputeTimems = 20;
+	   userInput.configPeriodms = 50;
+	   userInput.configDeadlinems = 40;
 	   threadConfigs.push_back(userInput);
 
-	   userInput.configComputeTimems = 100;
-	   userInput.configPeriodms = 1000;
-	   userInput.configDeadlinems = 900;
+	   userInput.configComputeTimems = 10;
+	   userInput.configPeriodms = 100;
+	   userInput.configDeadlinems = 90;
 	   threadConfigs.push_back(userInput);
 
 	  TCBScheduler scheduler (threadConfigs, iterationsPerSecond);
 
 	  scheduler.run();
 
-	   sleep (3);
+	   sleep (2);
 
 	   scheduler.setSimTime(5);
 
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 
 	   testThread.WaitForInternalThreadToExit();
 */
-	   sleep (10);
+	   sleep (50);
 	   cout << __FUNCTION__ << " done "<< endl;
 
 	return EXIT_SUCCESS;
@@ -229,4 +229,3 @@ void* measureTime( void* arg )
 
     return NULL;
 }
-

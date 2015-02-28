@@ -5,32 +5,41 @@
 #include <iostream.h>
 #include <unistd.h>
 
+// For trace events
+#include <sys/neutrino.h>
+#include <sys/trace.h>
+
+// DEBUG CODE
 #include <limits>
 
 using namespace std;
 
-const int millisecPerSec = 1000;
-
 TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
-		              int configDeadlinems, int iterationsPerSecond, int configThreadNumber)
+		              int configDeadlinems, int iterationsPerSecond, int configTCBThreadID)
 :computeTimems(configComputeTimems),
  deadlinems(configDeadlinems),
  periodms(configPeriodms),
- TCBThreadNumber(configThreadNumber),
+ TCBThreadID(configTCBThreadID),
+ threadPriority(0),
  computeTimeExecutedms(0),
+ doWork(0),
  periodExecutedms(0),
- doWork(-2)
+ nextPeriodms(0),
+ nextDeadlinems(0),
+ running(true)
 {
-	computeTimeIterations = iterationsPerSecond / millisecPerSec * configComputeTimems;
+	// calculate the number of iterations we're supposed to run for in our work loop
+	computeTimeIterations = iterationsPerSecond / MILISECPERSEC * configComputeTimems;
 
-	memset(&nextPeriod, 0, sizeof(nextPeriod));
-	memset(&nextDeadline, 0, sizeof(nextDeadline));
-
-	running = true;
-
-//	computationInterruped = false;
+	// Not sure if we need this.
+	computationInterruped = false;
 
 	toSchedmq = 0;
+}
+
+int TCBThread::getComputeTimeExecuted()
+{
+	return computeTimeExecutedms;
 }
 
 int TCBThread::getComputeTimems()
@@ -38,35 +47,72 @@ int TCBThread::getComputeTimems()
 	return computeTimems;
 }
 
+int TCBThread::getDeadlinems()
+{
+	return deadlinems;
+}
+
 bool TCBThread::getcomputationInterruped()
 {
 	return computationInterruped;
 }
 
+int TCBThread::getNextDeadline ()
+{
+	return nextDeadlinems;
+}
+
+int TCBThread::getNextPeriod ()
+{
+	return nextPeriodms;
+}
+
+int TCBThread::getPeriodms()
+{
+	return periodms;
+}
+
+int TCBThread::getTCBThreadID()
+{
+	return TCBThreadID;
+}
+
+double TCBThread::getThreadPriority()
+{
+	return threadPriority;
+}
+
 // this is where we do all the work.
 void  TCBThread::InternalThreadEntry()
 {
-// cout << __FUNCTION__  << " TCBThread " << TCBThreadNumber << " started" << endl;
+// cout << __FUNCTION__  << " TCBThread " << TCBThreadID << " started" << endl;
+
+	// We only want to tell the scheduler we're intialized once.
+	bool SendThreadIntializedMessage = false;
 
     // set the name of the thread for tracing
-    std::string name = "TCBThread " + TCBThreadNumber;
+    std::string name = "TCBThread " + TCBThreadID;
  	pthread_setname_np(_thread, name.c_str());
 
-    // gotta initialize my mutex before starting.
+    // Initialize my mutex used to start and stop the work loop before starting.
 	pthread_mutex_init(&TCBMutex, NULL);
 
+	// Open up the message queue to the TCBScheduler
  	std::string msgQueueName = "TCBSchedulerMsgQueue";
-
 	if ((toSchedmq = mq_open(msgQueueName.c_str(), O_WRONLY)) == -1)
 	{
 		cout << __FUNCTION__  << " Message queue was not created "
 			 << strerror( errno ) << endl;
 	}
 
-    //doWork = computeTimeIterations;
+	// Set do work to -1 so that our work loop is not engaged while we're
+	// starting up.
+	doWork = -1;
 
+	// Main thread loop
 	while (running)
 	{
+		// this is the work loop. It is controlled by the suspend and resume functions.
 		while (doWork > 0)
 		{
 			pthread_mutex_lock( &TCBMutex );
@@ -81,9 +127,9 @@ void  TCBThread::InternalThreadEntry()
 		{
 			MsgStruct doneMessage;
 			doneMessage.messageType = MSG_TCBTHREADONE;
-			doneMessage.threadNumber = TCBThreadNumber;
+			doneMessage.threadNumber = TCBThreadID;
 
-//			cout << __FUNCTION__  << "TCBThread " << TCBThreadNumber << " sending MSG_TCBTHREADONE message " << endl;
+//			cout << __FUNCTION__  << "TCBThread " << TCBThreadID << " sending MSG_TCBTHREADONE message " << endl;
 
 			if(mq_send(toSchedmq, reinterpret_cast<char*>(&doneMessage), sizeof(MsgStruct), 0) < 0)
 			{
@@ -94,26 +140,31 @@ void  TCBThread::InternalThreadEntry()
 			-- doWork;
 		}
 
-		if (doWork == -2)
+		// We're intitialized let TCBscheduler know
+		if (SendThreadIntializedMessage == false)
 		{
 			MsgStruct threadInitMessage;
 			threadInitMessage.messageType = MSG_TCBTHRINITIALIZED;
-			threadInitMessage.threadNumber = TCBThreadNumber;
+			threadInitMessage.threadNumber = TCBThreadID;
 
-//					cout << __FUNCTION__  << "TCBThread " << TCBThreadNumber << " sending MSG_TCBTHRINITIALIZED message " << endl;
+//		    cout << __FUNCTION__  << "TCBThread " << TCBThreadID << " sending MSG_TCBTHRINITIALIZED message " << endl;
 
-					if(mq_send(toSchedmq, reinterpret_cast<char*>(&threadInitMessage), sizeof(MsgStruct), 0) < 0)
-					{
-						cout << __FUNCTION__  << " Error sending MSG_TCBTHREADONE message "
-									 << strerror( errno ) << endl;
-					}
+			if(mq_send(toSchedmq, reinterpret_cast<char*>(&threadInitMessage), sizeof(MsgStruct), 0) < 0)
+			{
+				cout << __FUNCTION__  << " Error sending MSG_TCBTHRINITIALIZED message "
+					 << strerror( errno ) << endl;
+			}
 
-					-- doWork;
+			SendThreadIntializedMessage =  true;
 		}
-
 	}
 
-	cout << __FUNCTION__  << "TCBThread " << TCBThreadNumber << " done" << endl;
+	cout << __FUNCTION__  << "TCBThread " << TCBThreadID << " done" << endl;
+}
+
+void TCBThread::resume ()
+{
+	pthread_mutex_unlock(&TCBMutex);
 }
 
 void TCBThread::run( )
@@ -121,25 +172,29 @@ void TCBThread::run( )
 	MyThread::StartInternalThread();
 }
 
+void TCBThread::setComputeTimeExecuted(int newComputeTimeExecutedms)
+{
+	computeTimeExecutedms = newComputeTimeExecutedms;
+}
 
 void TCBThread::setcomputationInterruped(bool newComputationInterrupted)
 {
 	computationInterruped = newComputationInterrupted;
 }
 
-void TCBThread::setNextDeadline (timespec & newDeadline)
+void TCBThread::setNextDeadline (int newDeadline)
 {
-	nextDeadline = newDeadline;
+	nextDeadlinems = newDeadline;
 }
 
-void TCBThread::setNextPeriod (timespec & newPeriod)
+void TCBThread::setNextPeriod (int newPeriod)
 {
-	nextPeriod = newPeriod;
+	nextPeriodms = newPeriod;
 }
 
-void TCBThread::setComputeTimeExecuted(int newComputeTimeExecutedms)
+void TCBThread::setThreadPriority (double newThreadPriority)
 {
-	computeTimeExecutedms = newComputeTimeExecutedms;
+	threadPriority = newThreadPriority;
 }
 
 void TCBThread::startNewComputePeriod ()
@@ -164,9 +219,4 @@ void TCBThread::stop()
 void TCBThread::suspend ()
 {
 	pthread_mutex_lock(&TCBMutex);
-}
-
-void TCBThread::resume ()
-{
-	pthread_mutex_unlock(&TCBMutex);
 }
