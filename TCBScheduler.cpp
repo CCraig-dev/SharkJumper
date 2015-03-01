@@ -56,7 +56,13 @@ void  TCBScheduler::InternalThreadEntry()
 	std::string msgQueueName = "TCBSchedulerMsgQueue";
 	char buffer[MAXMSGSIZE + 1] = {0};
 
-	if ((toSchedmq = mq_open(msgQueueName.c_str(), O_CREAT|O_RDWR)) == -1)
+	struct mq_attr attr;
+	   attr.mq_flags = 0;
+	   attr.mq_maxmsg = 10;
+	   attr.mq_msgsize = MAXMSGSIZE;
+	   attr.mq_curmsgs = 0;
+
+	if ((toSchedmq = mq_open(msgQueueName.c_str(), O_CREAT|O_RDWR, 0666, &attr)) == -1)
 	{
 		cout << __FUNCTION__  << " Message queue was not created "
 			 << strerror( errno ) << endl;
@@ -80,7 +86,7 @@ void  TCBScheduler::InternalThreadEntry()
 	clock_gettime(CLOCK_REALTIME, &nextWakeupTime);
 
 	// I'm using this to increment the currentSimTimems and set the timer.
-	const int simTimeIncrementms = 1;
+	const int simTimeIncrementms = 50;
 
 	while (running)
 	{
@@ -128,7 +134,7 @@ void  TCBScheduler::InternalThreadEntry()
 				// This message is asynchronous so we dont' update the simulation
 				// times.  If we blow past nextWakeupTime then mq_timedreceive will
 				// immediately return.
-//				cout << __FUNCTION__  << " MSG_TCBTHREADONE message thread " << message->threadNumber << endl;
+				cout << __FUNCTION__  << " MSG_TCBTHREADONE message thread " << message->threadNumber << endl;
 
 				// this is how we will log stuff.
 				trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " MSG_TCBTHREADONE message thread ", message->threadNumber);
@@ -178,9 +184,9 @@ void  TCBScheduler::InternalThreadEntry()
 
 						runingTCBThread = temp;
 						runingTCBThread->resume();
-//						cout << " change to thread number " << runingTCBThread->getTCBThreadID() << endl;
+						cout << " change to thread number " << runingTCBThread->getTCBThreadID() << endl;
 
-						trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " change to thread number ", runingTCBThread->getTCBThreadID());
+//						trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " change to thread number ", runingTCBThread->getTCBThreadID());
 					}
 				 }
 

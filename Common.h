@@ -10,7 +10,7 @@
 
 #include <string>
 
-#define MAXMSGSIZE 4096
+#define MAXMSGSIZE 128
 
 #define MSG_UNDEFINED 0
 #define MSG_TCBTHRINITIALIZED 1
