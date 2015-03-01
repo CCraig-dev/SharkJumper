@@ -77,11 +77,18 @@ int main(int argc, char *argv[]) {
 
 	  scheduler.run();
 
-	   sleep (2);
+	  // We need this sleep in here to allow the scheduler time to set up the message queues.
+	  sleep (1);
 
-	   scheduler.setSimTime(5);
+	  if (scheduler.schedulerIsInitialized())
+	  {
+		   scheduler.setSimTime(5);
 
-	   scheduler.startSim();
+		   scheduler.setSchedulingStrategy(TCBScheduler::RMS);
+
+		   cout << __FUNCTION__  << " starting the sim " << endl;
+		   scheduler.startSim();
+	  }
 
 		// Debug code ignore this.
 /*

@@ -19,7 +19,8 @@
 using namespace std;
 
 TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs, int iterationsPerSecond)
-: toSchedmq(0),
+: fromSchedmq(0),
+  toSchedmq(0),
   running (true),
   simRunning(false),
   simTimeSec(0),
@@ -46,25 +47,33 @@ void  TCBScheduler::InternalThreadEntry()
  cout << __FUNCTION__  << " started " << endl;
 
     int currentSimTimems = 0;
+    unsigned int numberOfThreadsStarted = 0;   // Lets me know when to send simulationInitialize
 
     // set the name of the thread for tracing
  	std::string name = "TCBScheduler";
 	pthread_setname_np(_thread, name.c_str());
 
+ 	std::string toSchedmsgQueueName = "toTCBSchedulerMsgQueue";
+ 	std::string fromSchedmsgQueueName = "fromTCBSchedulerMsgQueue";
 
-	// Create a message queue
-	std::string msgQueueName = "TCBSchedulerMsgQueue";
 	char buffer[MAXMSGSIZE + 1] = {0};
 
+	// Create the message queues
 	struct mq_attr attr;
 	   attr.mq_flags = 0;
 	   attr.mq_maxmsg = 10;
 	   attr.mq_msgsize = MAXMSGSIZE;
 	   attr.mq_curmsgs = 0;
 
-	if ((toSchedmq = mq_open(msgQueueName.c_str(), O_CREAT|O_RDWR, 0666, &attr)) == -1)
+	if ((fromSchedmq = mq_open(fromSchedmsgQueueName.c_str(), O_CREAT|O_RDWR, 0666, &attr)) == -1)
 	{
-		cout << __FUNCTION__  << " Message queue was not created "
+		cout << __FUNCTION__  << fromSchedmsgQueueName << " was not created "
+			 << strerror( errno ) << endl;
+	}
+
+	if ((toSchedmq = mq_open(toSchedmsgQueueName.c_str(), O_CREAT|O_RDWR, 0666, &attr)) == -1)
+	{
+		cout << __FUNCTION__  << toSchedmsgQueueName << " was not created "
 			 << strerror( errno ) << endl;
 	}
 
@@ -105,6 +114,22 @@ void  TCBScheduler::InternalThreadEntry()
 
 				TCBThreads[message->threadNumber].suspend();
 				TCBThreads[message->threadNumber].startNewComputePeriod ();
+
+				++numberOfThreadsStarted;
+
+				// Once all the threads are initialized let user know.
+				if(numberOfThreadsStarted == TCBThreads.size())
+				{
+					// Send a start message to the thread to kick off the simulation.
+					MsgStruct schedulerInitializedMessage;
+					schedulerInitializedMessage.messageType = MSG_SCHEDULARINITIALIZED;
+
+					if (mq_send(fromSchedmq, reinterpret_cast<char*>(&schedulerInitializedMessage), sizeof(MsgStruct), 0) < 0)
+					{
+						cout << __FUNCTION__  << " Error schedular initialized message "
+									 << strerror( errno ) << endl;
+					}
+				}
 			}
 			else if (message->messageType == MSG_STARTSIM)
 			{
@@ -157,8 +182,10 @@ void  TCBScheduler::InternalThreadEntry()
 				runingTCBThread = NULL;
 			}
 		}
-		else
+		else if(errno == ETIMEDOUT)
 		{
+			// This code should only execute on an ETIMEDOUT error.
+
 			if (simRunning)
 			{
 //				cout << currentSimTimems << endl;
@@ -205,6 +232,11 @@ void  TCBScheduler::InternalThreadEntry()
 	if (toSchedmq != -1)
 	{
 		mq_close(toSchedmq);
+	}
+
+	if (fromSchedmq != -1)
+	{
+		mq_close(fromSchedmq);
 	}
 
 	cout << __FUNCTION__  << " done" << endl;
@@ -265,6 +297,34 @@ bool TCBScheduler::rateMonotinicScheduler(int currentSimTimems, TCBThread*& thre
 void TCBScheduler::run( )
 {
 	MyThread::StartInternalThread();
+}
+
+bool  TCBScheduler::schedulerIsInitialized ()
+{
+//	cout << __FUNCTION__  << " begin " << endl;
+
+	char buffer [MAXMSGSIZE + 1];
+
+	MsgStruct * message = reinterpret_cast<MsgStruct *> (buffer);
+
+	// We're going to block until we get a message.  If we get
+	// another message we just loop around.
+	do {
+		if(mq_receive(fromSchedmq, buffer, MAXMSGSIZE, NULL) < 0);
+		{
+			// we got a real error message.
+			if(errno != EOK)
+			{
+				cout << __FUNCTION__  << " Error recieving a message "
+							 	 << strerror( errno ) << endl;
+			}
+		}
+	}
+	while (message->messageType != MSG_SCHEDULARINITIALIZED);
+
+//	cout << __FUNCTION__  << " end " << endl;
+
+	return true;
 }
 
 void TCBScheduler::setSimTime(int newSimTimeSec)

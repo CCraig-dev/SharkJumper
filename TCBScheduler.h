@@ -139,6 +139,17 @@ public:
 	 */
 	SchedulingStrategy getSchedulingStrategy() {return strategy; }
 
+	/**
+	 * Function: TCBSchedulerIsInitialized
+	 *
+	 *	This function causes the thread to call it to block until the TCBScheduler
+	 *	is initialized.
+	 *
+	 * @return none.
+	 *
+	 */
+	bool schedulerIsInitialized ();
+
 
 private:
 
@@ -169,6 +180,9 @@ private:
 
 //  void leastSlackTime();
 //  void EarliestDeadlineFirst();
+
+	// This is a reference to the outgoing message queue in TCBscheduler.
+	mqd_t fromSchedmq;
 
 	// This is a reference to the incoming message queue in TCBscheduler.
 	mqd_t toSchedmq;

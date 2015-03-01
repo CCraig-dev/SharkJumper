@@ -98,7 +98,7 @@ void  TCBThread::InternalThreadEntry()
 	pthread_mutex_init(&TCBMutex, NULL);
 
 	// Open up the message queue to the TCBScheduler
- 	std::string msgQueueName = "TCBSchedulerMsgQueue";
+ 	std::string msgQueueName = "toTCBSchedulerMsgQueue";
 	if ((toSchedmq = mq_open(msgQueueName.c_str(), O_WRONLY)) == -1)
 	{
 		cout << __FUNCTION__  << " Message queue was not created "
