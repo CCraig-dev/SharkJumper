@@ -48,6 +48,7 @@ void  TCBScheduler::InternalThreadEntry()
 
     int currentSimTimems = 0;
     unsigned int numberOfThreadsStarted = 0;   // Lets me know when to send simulationInitialize
+    bool threadScheduled = false;
 
     // set the name of the thread for tracing
  	std::string name = "TCBScheduler";
@@ -145,6 +146,21 @@ void  TCBScheduler::InternalThreadEntry()
 				// We're always going to have a thread to run.
 				rateMonotinicScheduler(currentSimTimems, runingTCBThread);
 
+
+				 // Call the correct scheduling strategy
+				if (strategy == TCBScheduler::RMS)
+				{
+					threadScheduled = rateMonotinicScheduler(currentSimTimems, runingTCBThread);
+				}
+				else if(strategy == TCBScheduler::EDF)
+				{
+
+				}
+				else if(strategy == TCBScheduler::LST)
+				{
+
+				}
+
 				cout << " thread number " << runingTCBThread->getTCBThreadID() << endl;
 
 				// start the TCBThread Loop.
@@ -180,6 +196,9 @@ void  TCBScheduler::InternalThreadEntry()
 				// Since runingTCBThread isn't running any more set it to null.  This helps with
 				// transitions out of the no threads are running state to run a thread state.
 				runingTCBThread = NULL;
+
+				// set this to false since a Thread is not running.
+				threadScheduled = false;
 			}
 		}
 		else if(errno == ETIMEDOUT)
@@ -194,9 +213,24 @@ void  TCBScheduler::InternalThreadEntry()
 
 				currentSimTimems += simTimeIncrementms;
 
+				 // Call the correct scheduling strategy
+				if (strategy == TCBScheduler::RMS)
+				{
+			 	 	 threadScheduled = rateMonotinicScheduler(currentSimTimems, temp);
+				}
+				else if(strategy == TCBScheduler::EDF)
+				{
+
+				}
+				else if(strategy == TCBScheduler::LST)
+				{
+
+				}
+
+
 				 // If we found a thread to run and it's not the currently
 				 // running thread then switch to it.
-				 if (rateMonotinicScheduler(currentSimTimems, temp))
+				 if (threadScheduled == true)
 				 {
 					// If we need to run a new thread suspend the
 					// current thread and start up the new one
