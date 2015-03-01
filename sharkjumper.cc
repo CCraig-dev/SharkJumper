@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 	   userInput.configDeadlinems = 900;
 	   threadConfigs.push_back(userInput);
 
-	  TCBScheduler scheduler (threadConfigs, iterationsPerSecond);
+	  TCBScheduler scheduler (threadConfigs, 0, TCBScheduler::UNDEFINED, iterationsPerSecond);
 
 	  scheduler.run();
 

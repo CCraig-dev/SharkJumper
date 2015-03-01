@@ -18,7 +18,7 @@
 
 using namespace std;
 
-TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs, int iterationsPerSecond)
+TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs,int runTime, TCBScheduler::SchedulingStrategy selectedStrategy, int iterationsPerSecond)
 : fromSchedmq(0),
   toSchedmq(0),
   running (true),

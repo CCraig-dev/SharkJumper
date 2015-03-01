@@ -23,6 +23,7 @@ struct TaskParam
 	int configComputeTimems;
 	int configPeriodms;
 	int configDeadlinems;
+	TaskParam(int c, int p, int d) : configComputeTimems(c),configPeriodms(p),configDeadlinems(d) {}
 
 	// Initialize our variables to default values.
 	TaskParam ()
@@ -56,8 +57,7 @@ public:
 	 * @param iterationsPerSecond value derived after 1 second of c++ looping.
 	 *
 	 */
-	TCBScheduler(std::vector <TaskParam>& threadConfigs, int iterationsPerSecond);
-
+	TCBScheduler(std::vector <TaskParam>& threadConfigs, int totalRunTime, TCBScheduler::SchedulingStrategy selectedStrategy, int iterationsPerSecond);
 	/**
 	 * Function: ~TCBScheduler
 	 *
