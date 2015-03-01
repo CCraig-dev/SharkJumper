@@ -143,10 +143,6 @@ void  TCBScheduler::InternalThreadEntry()
 				// We're setting our baseline for timeing.
 				nextWakeupTime = startSimTime;
 
-				// We're always going to have a thread to run.
-				rateMonotinicScheduler(currentSimTimems, runingTCBThread);
-
-
 				 // Call the correct scheduling strategy
 				if (strategy == TCBScheduler::RMS)
 				{
@@ -154,7 +150,13 @@ void  TCBScheduler::InternalThreadEntry()
 				}
 				else if(strategy == TCBScheduler::EDF)
 				{
+					// Our first set of deadlines are equal to the configured thread deadline.
+					for(unsigned int i = 0; i < TCBThreads.size(); ++i)
+					{
+						TCBThreads[i].setNextDeadline(TCBThreads[i].getDeadlinems());
+					};
 
+					threadScheduled = earliestDeadlineFirstScheduler(currentSimTimems, runingTCBThread);
 				}
 				else if(strategy == TCBScheduler::LST)
 				{
@@ -175,7 +177,7 @@ void  TCBScheduler::InternalThreadEntry()
 				// This message is asynchronous so we dont' update the simulation
 				// times.  If we blow past nextWakeupTime then mq_timedreceive will
 				// immediately return.
-				cout << __FUNCTION__  << " MSG_TCBTHREADONE message thread " << message->threadNumber << endl;
+				cout << __FUNCTION__  << " " << currentSimTimems << " MSG_TCBTHREADONE message thread " << message->threadNumber << endl;
 
 				// this is how we will log stuff.
 				trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " MSG_TCBTHREADONE message thread ", message->threadNumber);
@@ -220,15 +222,14 @@ void  TCBScheduler::InternalThreadEntry()
 				}
 				else if(strategy == TCBScheduler::EDF)
 				{
-
+					threadScheduled = earliestDeadlineFirstScheduler(currentSimTimems, temp);
 				}
 				else if(strategy == TCBScheduler::LST)
 				{
 
 				}
 
-
-				 // If we found a thread to run and it's not the currently
+				// If we found a thread to run and it's not the currently
 				 // running thread then switch to it.
 				 if (threadScheduled == true)
 				 {
@@ -245,7 +246,7 @@ void  TCBScheduler::InternalThreadEntry()
 
 						runingTCBThread = temp;
 						runingTCBThread->resume();
-						cout << " change to thread number " << runingTCBThread->getTCBThreadID() << endl;
+						cout << " " << currentSimTimems << " change to thread number " << runingTCBThread->getTCBThreadID() << endl;
 
 //						trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " change to thread number ", runingTCBThread->getTCBThreadID());
 					}
@@ -274,6 +275,61 @@ void  TCBScheduler::InternalThreadEntry()
 	}
 
 	cout << __FUNCTION__  << " done" << endl;
+}
+
+bool TCBScheduler::earliestDeadlineFirstScheduler(int currentSimTimems, TCBThread*& thread)
+{
+//	cout << __FUNCTION__  << " called " << endl;
+
+	double priority = 5000;  // Just some really big number.
+	unsigned int index = 0;
+
+	// This handles the timeout period where nothing should run.
+	bool threadScheduled = false;
+
+	for(unsigned int i=0; i < TCBThreads.size(); ++i)
+	{
+		// if the period hasn't been satisfied
+		if(TCBThreads[i].getNextPeriod () <= currentSimTimems)
+		{
+			// calculate the priority and set it.
+			// for EDF the earliest deadline runs first.
+			TCBThreads[i].setThreadPriority((double)(TCBThreads[i].getNextDeadline() - currentSimTimems));
+		}
+	}
+
+	// find a runnable task
+	for(unsigned int i=0; i < TCBThreads.size(); ++i)
+	{
+		// if the period hasn't been satisfied
+		if(TCBThreads[i].getNextPeriod () <= currentSimTimems)
+		{
+
+//			cout << " Thread " << i << " " << TCBThreads[i].getThreadPriority() << endl;
+
+			// The highest priority thread to run is the one with the earliest
+			// deadline.
+			if(TCBThreads[i].getThreadPriority() < priority)
+			{
+				priority = TCBThreads[i].getThreadPriority();
+				index = i;
+
+				threadScheduled = true;
+			}
+		}
+	}
+
+	// If a thread should run return a pointer to it otherwise there is nothing
+	// to run so return null;
+	if(threadScheduled)
+	{
+		// return the address of the scheduled task;
+		thread = &TCBThreads[index];
+	}
+
+	return threadScheduled;
+
+	cout << __FUNCTION__  << " done " << endl;
 }
 
 bool TCBScheduler::rateMonotinicScheduler(int currentSimTimems, TCBThread*& thread)

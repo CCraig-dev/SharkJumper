@@ -157,6 +157,28 @@ private:
 	virtual void InternalThreadEntry();
 
 	/**
+	 * Function: earliestDeadlineFirstScheduler
+	 *
+	 *	Contains the EDF scheduling algorithm.
+	 *
+	 * @param runingTCBThread the currently running thread
+	 * @param currentSimTimems the sim time.
+	 *
+	 */
+    bool earliestDeadlineFirstScheduler(int currentSimTimems, TCBThread*& thread);
+
+	/**
+	 * Function: rateMonotinicScheduler
+	 *
+	 *	Contains the RMS scheduling algorithm.
+	 *
+	 * @param runingTCBThread the currently running thread
+	 * @param currentSimTimems the sim time.
+	 *
+	 */
+    bool rateMonotinicScheduler(int currentSimTimems, TCBThread*& thread);
+
+	/**
 	 * Function: updatetimeSpec
 	 *
 	 *	Updates the value of timespec my valuems.
@@ -166,17 +188,6 @@ private:
 	 *
 	 */
     void updatetimeSpec (timespec & time, int valuems);
-
-	/**
-	 * Function: updatetimeSpec
-	 *
-	 *	Contains the RMS scheduling algorithm.
-	 *
-	 * @param runingTCBThread the currently running thread
-	 * @param currentSimTimems the sim time.
-	 *
-	 */
-    bool rateMonotinicScheduler(int currentSimTimems, TCBThread*& thread);
 
 //  void leastSlackTime();
 //  void EarliestDeadlineFirst();

@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
 	   // Put in a tuning factor to allow the OS time to run.
 	   // 80% works on a 486.
-		const double tuningFactor = 0.75;
+		const double tuningFactor = 0.80;
 
 	   int channelID = 0;
 	   int iterationsPerSecond = 0;
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 	  {
 		   scheduler.setSimTime(5);
 
-		   scheduler.setSchedulingStrategy(TCBScheduler::RMS);
+		   scheduler.setSchedulingStrategy(TCBScheduler::EDF);
 
 		   cout << __FUNCTION__  << " starting the sim " << endl;
 		   scheduler.startSim();
