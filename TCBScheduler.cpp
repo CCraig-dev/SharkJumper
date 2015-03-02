@@ -96,7 +96,7 @@ void  TCBScheduler::InternalThreadEntry()
 	clock_gettime(CLOCK_REALTIME, &nextWakeupTime);
 
 	// I'm using this to increment the currentSimTimems and set the timer.
-	const int simTimeIncrementms = 50;
+	const int simTimeIncrementms = 10;
 
 	while (running)
 	{
@@ -158,9 +158,9 @@ void  TCBScheduler::InternalThreadEntry()
 
 					threadScheduled = earliestDeadlineFirstScheduler(currentSimTimems, runingTCBThread);
 				}
-				else if(strategy == TCBScheduler::LST)
+				else if(strategy == TCBScheduler::SCT)
 				{
-
+					threadScheduled = earliestDeadlineFirstScheduler(currentSimTimems, runingTCBThread);
 				}
 
 				cout << " thread number " << runingTCBThread->getTCBThreadID() << endl;
@@ -180,7 +180,7 @@ void  TCBScheduler::InternalThreadEntry()
 				cout << __FUNCTION__  << " " << currentSimTimems << " MSG_TCBTHREADONE message thread " << message->threadNumber << endl;
 
 				// this is how we will log stuff.
-				trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " MSG_TCBTHREADONE message thread ", message->threadNumber);
+//				trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " MSG_TCBTHREADONE message thread ", message->threadNumber);
 
 				int nextPeriod = 0;
 
@@ -206,7 +206,6 @@ void  TCBScheduler::InternalThreadEntry()
 		else if(errno == ETIMEDOUT)
 		{
 			// This code should only execute on an ETIMEDOUT error.
-
 			if (simRunning)
 			{
 //				cout << currentSimTimems << endl;
@@ -218,15 +217,15 @@ void  TCBScheduler::InternalThreadEntry()
 				 // Call the correct scheduling strategy
 				if (strategy == TCBScheduler::RMS)
 				{
-			 	 	 threadScheduled = rateMonotinicScheduler(currentSimTimems, temp);
+					threadScheduled = rateMonotinicScheduler(currentSimTimems, temp);
 				}
 				else if(strategy == TCBScheduler::EDF)
 				{
 					threadScheduled = earliestDeadlineFirstScheduler(currentSimTimems, temp);
 				}
-				else if(strategy == TCBScheduler::LST)
+				else if(strategy == TCBScheduler::SCT)
 				{
-
+					threadScheduled = shortestCompletionTimeScheduler(currentSimTimems, temp);
 				}
 
 				// If we found a thread to run and it's not the currently
@@ -246,6 +245,7 @@ void  TCBScheduler::InternalThreadEntry()
 
 						runingTCBThread = temp;
 						runingTCBThread->resume();
+
 						cout << " " << currentSimTimems << " change to thread number " << runingTCBThread->getTCBThreadID() << endl;
 
 //						trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " change to thread number ", runingTCBThread->getTCBThreadID());
@@ -329,7 +329,7 @@ bool TCBScheduler::earliestDeadlineFirstScheduler(int currentSimTimems, TCBThrea
 
 	return threadScheduled;
 
-	cout << __FUNCTION__  << " done " << endl;
+//	cout << __FUNCTION__  << " done " << endl;
 }
 
 bool TCBScheduler::rateMonotinicScheduler(int currentSimTimems, TCBThread*& thread)
@@ -382,6 +382,61 @@ bool TCBScheduler::rateMonotinicScheduler(int currentSimTimems, TCBThread*& thre
 	return threadScheduled;
 
 //	cout << __FUNCTION__  << " done " << endl;
+}
+
+bool TCBScheduler::shortestCompletionTimeScheduler(int currentSimTimems, TCBThread*& thread)
+{
+//	cout << __FUNCTION__  << " called " << endl;
+
+	double priority = 5000;  // Just some really big number.
+	unsigned int index = 0;
+
+	// This handles the timeout period where nothing should run.
+	bool threadScheduled = false;
+
+	for(unsigned int i=0; i < TCBThreads.size(); ++i)
+	{
+		// if the period hasn't been satisfied
+		if(TCBThreads[i].getNextPeriod () <= currentSimTimems)
+		{
+			// calculate the priority and set it.
+			// for SCT the shortest remaining compute time runs first.
+			TCBThreads[i].setThreadPriority(TCBThreads[i].getRemainingComputeTimems());
+		}
+	}
+
+	// find a runnable task
+	for(unsigned int i=0; i < TCBThreads.size(); ++i)
+	{
+		// if the period hasn't been satisfied
+		if(TCBThreads[i].getNextPeriod () <= currentSimTimems)
+		{
+
+//			cout << " Thread " << i << " " << TCBThreads[i].getThreadPriority() << endl;
+
+			// The highest priority thread to run is the one with the earliest
+			// deadline.
+			if(TCBThreads[i].getThreadPriority() < priority)
+			{
+				priority = TCBThreads[i].getThreadPriority();
+				index = i;
+
+				threadScheduled = true;
+			}
+		}
+	}
+
+	// If a thread should run return a pointer to it otherwise there is nothing
+	// to run so return null;
+	if(threadScheduled)
+	{
+		// return the address of the scheduled task;
+		thread = &TCBThreads[index];
+	}
+
+	return threadScheduled;
+
+	cout << __FUNCTION__  << " done " << endl;
 }
 
 void TCBScheduler::run( )

@@ -34,16 +34,6 @@ public:
     virtual ~TCBThread() {/* empty */}
 
 	/**
-	 * Function: getComputeTimeExecuted
-	 *
-	 *	Gets the amount of time the thread has actually executed.
-	 *
-	 * @return returns amount of time the thread has executed.
-	 *
-	 */
-    int getComputeTimeExecuted();
-
-	/**
 	 * Function: getComputeTimems
 	 *
 	 *	Gets the configured compute time of the thread.
@@ -72,6 +62,16 @@ public:
 	 *
 	 */
     int getPeriodms();
+
+	/**
+	 * Function: getRemainingComputeTimems
+	 *
+	 *	Gets the remainign compute time of a thread.
+	 *
+	 * @return returns the configured period of the thread.
+	 *
+	 */
+    double getRemainingComputeTimems();
 
 	/**
 	 * Function: getTCBThreadID
@@ -140,15 +140,6 @@ public:
 	 */
 	void run();
 
-	/**
-	 * Function: setComputeTimeExecuted
-	 *
-	 *	Sets the amount of time the thread has executed.
-	 *
-	 * @return none.
-	 *
-	 */
-    void setComputeTimeExecuted(int newComputeTimeExecutedms);
 
 	/**
 	 * Function: setNextDeadline
@@ -208,13 +199,6 @@ public:
 	 */
 	void suspend ();
 
-
-	// not sure if we need this any more.
-	bool getcomputationInterruped();
-
-	// not sure if we need this any more.
-	void setcomputationInterruped(bool newComputationInterrupted);
-
 	/**
 	 * Function: stop
 	 *
@@ -244,13 +228,13 @@ private:
 	// Holds the thread's unique threadID.
 	int TCBThreadID;
 
+	// Holds the number of iterations of "work" that is done in a millisec.
+	double interationsPerMilisec;
+
 	// Holds the priority of the threads for the algorithms. Whether a low
 	// value represents a high priority or vice versa is dependent on the
 	// algorithm.
 	double threadPriority;
-
-	// Holds the amount of compute time executed.  Value is between 0 and computeTimems;
-	int computeTimeExecutedms;
 
 	// This is a counter that deincrements while work is being done.
 	int doWork;
@@ -272,9 +256,6 @@ private:
 	// Holds the number of iterations the "work" loop is supposed to run for.
 	// It equivalent in time to computeTimems.
 	int computeTimeIterations;
-
-	// Not sure if we need this.
-	bool computationInterruped;
 
 	// This is a reference to the incoming message queue in TCBscheduler.
 	mqd_t toSchedmq;

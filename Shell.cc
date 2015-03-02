@@ -198,7 +198,7 @@ void stageExecutionWith(string strCommand, string strInput,
 			selectedStrategy = TCBScheduler::RMS;
 			break;
 		case 2:
-			selectedStrategy = TCBScheduler::LST;
+			selectedStrategy = TCBScheduler::SCT;
 			break;
 		case 3:
 			selectedStrategy = TCBScheduler::EDF;
@@ -312,7 +312,7 @@ bool validateInput(string strCommand, string strInput) {
 		//Check strInput for <c,p,d>
 		return validateTaskInput(strInput);
 	} else if (strCommand.compare("2") == 0) {
-		//Check strInput for "RMS", "EDF", "LST"
+		//Check strInput for "RMS", "EDF", "SCT"
 		return validateAlgInput(strInput);
 	}
 	return false;
@@ -452,7 +452,7 @@ void usage(int section) {
 	case 2:
 		cout << "Instructions for selecting an algorithm for runtime:\n";
 		cout << "(1) Enter 1 to stage RMS for runtime.\n";
-		cout << "(2) Enter 2 to stage LST for runtime.\n";
+		cout << "(2) Enter 2 to stage SCT for runtime.\n";
 		cout << "(3) Enter 3 to stage EDF for runtime.\n";
 		break;
 	default:
@@ -465,8 +465,8 @@ string getStringFromAlg(TCBScheduler::SchedulingStrategy selectedStrategy) {
 	switch (selectedStrategy) {
 	case TCBScheduler::RMS:
 		return "RMS";
-	case TCBScheduler::LST:
-		return "LST";
+	case TCBScheduler::SCT:
+		return "SCT";
 	case TCBScheduler::EDF:
 		return "EDF";
 	case TCBScheduler::UNDEFINED:

@@ -21,7 +21,6 @@ TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
  periodms(configPeriodms),
  TCBThreadID(configTCBThreadID),
  threadPriority(0),
- computeTimeExecutedms(0),
  doWork(0),
  periodExecutedms(0),
  nextPeriodms(0),
@@ -31,15 +30,12 @@ TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
 	// calculate the number of iterations we're supposed to run for in our work loop
 	computeTimeIterations = iterationsPerSecond / MILISECPERSEC * configComputeTimems;
 
-	// Not sure if we need this.
-	computationInterruped = false;
+	interationsPerMilisec = iterationsPerSecond / MILISECPERSEC;
+
+	cout << __FUNCTION__  << " computeTimeIterations " << computeTimeIterations << endl;
+	cout << __FUNCTION__  << " interationsPerMilisec " << interationsPerMilisec << endl;
 
 	toSchedmq = 0;
-}
-
-int TCBThread::getComputeTimeExecuted()
-{
-	return computeTimeExecutedms;
 }
 
 int TCBThread::getComputeTimems()
@@ -50,11 +46,6 @@ int TCBThread::getComputeTimems()
 int TCBThread::getDeadlinems()
 {
 	return deadlinems;
-}
-
-bool TCBThread::getcomputationInterruped()
-{
-	return computationInterruped;
 }
 
 int TCBThread::getNextDeadline ()
@@ -70,6 +61,11 @@ int TCBThread::getNextPeriod ()
 int TCBThread::getPeriodms()
 {
 	return periodms;
+}
+
+double TCBThread::getRemainingComputeTimems()
+{
+	return doWork / interationsPerMilisec;
 }
 
 int TCBThread::getTCBThreadID()
@@ -172,16 +168,6 @@ void TCBThread::run( )
 	MyThread::StartInternalThread();
 }
 
-void TCBThread::setComputeTimeExecuted(int newComputeTimeExecutedms)
-{
-	computeTimeExecutedms = newComputeTimeExecutedms;
-}
-
-void TCBThread::setcomputationInterruped(bool newComputationInterrupted)
-{
-	computationInterruped = newComputationInterrupted;
-}
-
 void TCBThread::setNextDeadline (int newDeadline)
 {
 	nextDeadlinems = newDeadline;
@@ -199,7 +185,6 @@ void TCBThread::setThreadPriority (double newThreadPriority)
 
 void TCBThread::startNewComputePeriod ()
 {
-	computeTimeExecutedms = 0;
 	periodExecutedms = 0;
 
 	doWork = computeTimeIterations;

@@ -44,7 +44,7 @@ public:
 	{
 		RMS,
 		EDF,
-		LST,
+		SCT,
 		UNDEFINED
 	};
 
@@ -168,6 +168,17 @@ private:
     bool earliestDeadlineFirstScheduler(int currentSimTimems, TCBThread*& thread);
 
 	/**
+	 * Function: leastSlackTime
+	 *
+	 *	Contains the RMS scheduling algorithm.
+	 *
+	 * @param runingTCBThread the currently running thread
+	 * @param currentSimTimems the sim time.
+	 *
+	 */
+    bool shortestCompletionTimeScheduler(int currentSimTimems, TCBThread*& thread);
+
+	/**
 	 * Function: rateMonotinicScheduler
 	 *
 	 *	Contains the RMS scheduling algorithm.
@@ -189,8 +200,6 @@ private:
 	 */
     void updatetimeSpec (timespec & time, int valuems);
 
-//  void leastSlackTime();
-//  void EarliestDeadlineFirst();
 
 	// This is a reference to the outgoing message queue in TCBscheduler.
 	mqd_t fromSchedmq;
