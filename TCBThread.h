@@ -140,6 +140,16 @@ public:
 	 */
 	void run();
 
+	/**
+	 * Function: resetThread
+	 *
+	 *	Used when the simulation is terminated to stop the work loop and do any
+	 *	cleanup.
+	 *
+	 * @return none.
+	 *
+	 */
+	void resetThread();
 
 	/**
 	 * Function: setNextDeadline
@@ -209,9 +219,7 @@ public:
 	 */
 	void stop();
 
-
 private:
-
 	// Implementation of our code from mythreadclass.h
 	virtual void InternalThreadEntry();
 
@@ -238,9 +246,6 @@ private:
 
 	// This is a counter that deincrements while work is being done.
 	int doWork;
-
-	// Holds the amount of the period executed.  Value is between 0 and periodms;
-	int periodExecutedms;
 
 	// Holds the calculated next period the thread is supposed to run in.
 	// The period is calculated from the start of the simulation which is time 0.

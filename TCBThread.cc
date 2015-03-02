@@ -22,7 +22,6 @@ TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
  TCBThreadID(configTCBThreadID),
  threadPriority(0),
  doWork(0),
- periodExecutedms(0),
  nextPeriodms(0),
  nextDeadlinems(0),
  running(true)
@@ -158,6 +157,17 @@ void  TCBThread::InternalThreadEntry()
 	cout << __FUNCTION__  << "TCBThread " << TCBThreadID << " done" << endl;
 }
 
+void TCBThread::resetThread()
+{
+	// Set it to negative -1 or we'll send a MSG_TCBTHREADONE message.
+	doWork = -1;
+
+	// Clean up your variables
+	nextDeadlinems = 0;
+	nextPeriodms = 0;
+	threadPriority = 0;
+}
+
 void TCBThread::resume ()
 {
 	pthread_mutex_unlock(&TCBMutex);
@@ -185,8 +195,6 @@ void TCBThread::setThreadPriority (double newThreadPriority)
 
 void TCBThread::startNewComputePeriod ()
 {
-	periodExecutedms = 0;
-
 	doWork = computeTimeIterations;
 
 //	cout << __FUNCTION__  << " doWork " << doWork << endl;

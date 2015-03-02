@@ -47,6 +47,9 @@ void  TCBScheduler::InternalThreadEntry()
  cout << __FUNCTION__  << " started " << endl;
 
     int currentSimTimems = 0;
+
+    // This is relative time verses absolute time.
+    int endSimTimems = 0;
     unsigned int numberOfThreadsStarted = 0;   // Lets me know when to send simulationInitialize
     bool threadScheduled = false;
 
@@ -140,6 +143,9 @@ void  TCBScheduler::InternalThreadEntry()
 				// reset the simulation time counter.
 				currentSimTimems = 0;
 
+				// Calculate the end time.
+				endSimTimems = simTimeSec * MILISECPERSEC;
+
 				// We're setting our baseline for timeing.
 				nextWakeupTime = startSimTime;
 
@@ -214,46 +220,68 @@ void  TCBScheduler::InternalThreadEntry()
 
 				currentSimTimems += simTimeIncrementms;
 
-				 // Call the correct scheduling strategy
-				if (strategy == TCBScheduler::RMS)
+				// Check to make sure we don't overshoot our endSimTimems.
+				if (currentSimTimems != endSimTimems)
 				{
-					threadScheduled = rateMonotinicScheduler(currentSimTimems, temp);
-				}
-				else if(strategy == TCBScheduler::EDF)
-				{
-					threadScheduled = earliestDeadlineFirstScheduler(currentSimTimems, temp);
-				}
-				else if(strategy == TCBScheduler::SCT)
-				{
-					threadScheduled = shortestCompletionTimeScheduler(currentSimTimems, temp);
-				}
 
-				// If we found a thread to run and it's not the currently
-				 // running thread then switch to it.
-				 if (threadScheduled == true)
-				 {
-					// If we need to run a new thread suspend the
-					// current thread and start up the new one
-					if (temp != runingTCBThread)
+					 // Call the correct scheduling strategy
+					if (strategy == TCBScheduler::RMS)
 					{
-						// If the thread finished we set the running thread to null.  You don't
-						// want it to crash by calling a null pointer.
-						if (runingTCBThread != NULL)
-						{
-							runingTCBThread->suspend();
-						}
-
-						runingTCBThread = temp;
-						runingTCBThread->resume();
-
-						cout << " " << currentSimTimems << " change to thread number " << runingTCBThread->getTCBThreadID() << endl;
-
-//						trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " change to thread number ", runingTCBThread->getTCBThreadID());
+						threadScheduled = rateMonotinicScheduler(currentSimTimems, temp);
 					}
-				 }
+					else if(strategy == TCBScheduler::EDF)
+					{
+						threadScheduled = earliestDeadlineFirstScheduler(currentSimTimems, temp);
+					}
+					else if(strategy == TCBScheduler::SCT)
+					{
+						threadScheduled = shortestCompletionTimeScheduler(currentSimTimems, temp);
+					}
 
-				// Update our wakeup time.
-				updatetimeSpec (nextWakeupTime, simTimeIncrementms);
+					// If we found a thread to run and it's not the currently
+					 // running thread then switch to it.
+					 if (threadScheduled == true)
+					 {
+						// If we need to run a new thread suspend the
+						// current thread and start up the new one
+						if (temp != runingTCBThread)
+						{
+							// If the thread finished we set the running thread to null.  You don't
+							// want it to crash by calling a null pointer.
+							if (runingTCBThread != NULL)
+							{
+								runingTCBThread->suspend();
+							}
+
+							runingTCBThread = temp;
+							runingTCBThread->resume();
+
+							cout << " " << currentSimTimems << " change to thread number " << runingTCBThread->getTCBThreadID() << endl;
+
+	//						trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " change to thread number ", runingTCBThread->getTCBThreadID());
+						}
+					 }
+
+					// Update our wakeup time.
+					updatetimeSpec (nextWakeupTime, simTimeIncrementms);
+				}
+				else
+				{
+					// Simulation is ended.  Pack up and go home.
+
+					cout << " " << currentSimTimems << " Simulation Done!" << endl;
+
+					simRunning = false;
+
+					// Clean up the threads.
+					for(unsigned int i = 0; i < TCBThreads.size(); ++i)
+					{
+						TCBThreads[i].resetThread( );
+					};
+
+					// Set the next time out to 1 second.
+					nextWakeupTime.tv_sec += 1;
+				}
 			}
 			else
 			{
