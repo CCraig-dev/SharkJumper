@@ -114,9 +114,9 @@ int main(int argc, char *argv[]) {
 //Set hardcoded values for debug purposes
 void setStateHard() {
 	threadConfigs.clear();
-	TaskParam one = TaskParam(100, 300, 200);
-	TaskParam two = TaskParam(200, 500, 400);
-	TaskParam three = TaskParam(100, 1000, 900);
+	TaskParam one = TaskParam(10, 30, 20);
+	TaskParam two = TaskParam(20, 50, 40);
+	TaskParam three = TaskParam(10, 100, 90);
 	threadConfigs.push_back(one);
 	threadConfigs.push_back(two);
 	threadConfigs.push_back(three);
@@ -416,7 +416,7 @@ void fireInstruction(string strCommand) {
 			sleep(1);
 
 			if (scheduler.schedulerIsInitialized()) {
-				scheduler.setSimTime(5);
+				scheduler.setSimTime(runTime);
 				cout << "Simulation is beginning...\n";
 				scheduler.startSim();
 			}

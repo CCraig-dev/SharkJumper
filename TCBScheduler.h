@@ -34,6 +34,23 @@ struct TaskParam
 	}
 };
 
+struct LogMsgStruct
+{
+	int logMsgTimems;
+	const char* text;
+	int threadNumber;
+
+	// text is intialized already.
+	LogMsgStruct ()
+	{
+		logMsgTimems = 0;
+		text = NULL;
+
+		// The thread number is -1 to because threads are 0..n
+		threadNumber = -1;
+	}
+};
+
 class TCBScheduler: public MyThread
 {
 public:
@@ -200,6 +217,14 @@ private:
 	 */
     void updatetimeSpec (timespec & time, int valuems);
 
+	/**
+	 * Function: printLog
+	 *
+	 *	This function will print the messages contained in the logMessages array.
+	 *
+	 */
+    void printLog();
+
 
 	// This is a reference to the outgoing message queue in TCBscheduler.
 	mqd_t fromSchedmq;
@@ -229,9 +254,8 @@ private:
 	// Holds the threads that are used in the simulation
 	std::vector <TCBThread> TCBThreads;
 
-	// Not sure if we need this.
-	std::list <TCBThread*> TCBThreadQueue;
-	std::list <TCBThread*> startTCBThreadQueue;
+	std::vector <LogMsgStruct> logMessages;
+
 };
 
 #endif /* TCBSCHEDULER_H_ */

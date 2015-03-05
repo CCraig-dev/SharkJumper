@@ -31,9 +31,6 @@ TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
 
 	interationsPerMilisec = iterationsPerSecond / MILISECPERSEC;
 
-	cout << __FUNCTION__  << " computeTimeIterations " << computeTimeIterations << endl;
-	cout << __FUNCTION__  << " interationsPerMilisec " << interationsPerMilisec << endl;
-
 	toSchedmq = 0;
 }
 
@@ -154,7 +151,13 @@ void  TCBThread::InternalThreadEntry()
 		}
 	}
 
-	cout << __FUNCTION__  << "TCBThread " << TCBThreadID << " done" << endl;
+    // Close the message queue before we exit the thread.
+	if (toSchedmq != -1)
+	{
+		mq_close(toSchedmq);
+	}
+
+//	cout << __FUNCTION__  << "TCBThread " << TCBThreadID << " done" << endl;
 }
 
 void TCBThread::resetThread()

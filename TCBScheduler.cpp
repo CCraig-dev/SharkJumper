@@ -10,6 +10,7 @@
 
 #include <errno.h>
 #include <iostream.h>
+#include <string.h>
 #include <unistd.h>
 
 // For trace events.
@@ -17,6 +18,11 @@
 #include <sys/trace.h>
 
 using namespace std;
+
+string startMessage = " Simulation Started ";
+string endMessage = " Simulation complete ";
+string threadDoneMessage = " MSG_TCBTHREADONE message thread ";
+string threadSwitchMessage = " changing to thread number ";
 
 TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs, int runTime, TCBScheduler::SchedulingStrategy selectedStrategy, int iterationsPerSecond)
 : fromSchedmq(0),
@@ -44,7 +50,7 @@ int TCBScheduler::getSimTime()
 // this is where we do all the work.
 void  TCBScheduler::InternalThreadEntry()
 {
- cout << __FUNCTION__  << " started " << endl;
+// cout << __FUNCTION__  << " started " << endl;
 
     int currentSimTimems = 0;
 
@@ -52,6 +58,9 @@ void  TCBScheduler::InternalThreadEntry()
     int endSimTimems = 0;
     unsigned int numberOfThreadsStarted = 0;   // Lets me know when to send simulationInitialize
     bool threadScheduled = false;
+
+    // Holds a log message;
+    LogMsgStruct logMessage;
 
     // set the name of the thread for tracing
  	std::string name = "TCBScheduler";
@@ -99,7 +108,7 @@ void  TCBScheduler::InternalThreadEntry()
 	clock_gettime(CLOCK_REALTIME, &nextWakeupTime);
 
 	// I'm using this to increment the currentSimTimems and set the timer.
-	const int simTimeIncrementms = 10;
+	const int simTimeIncrementms = 2;
 
 	while (running)
 	{
@@ -114,7 +123,7 @@ void  TCBScheduler::InternalThreadEntry()
 			{
 			    // One of our threads finished initializing!
 				// lock the semaphore on it.
-				cout << __FUNCTION__  << " We got a MSG_TCBTHRINITIALIZED message from thread " << message->threadNumber << endl;
+//				cout << __FUNCTION__  << " We got a MSG_TCBTHRINITIALIZED message from thread " << message->threadNumber << endl;
 
 				TCBThreads[message->threadNumber].suspend();
 				TCBThreads[message->threadNumber].startNewComputePeriod ();
@@ -137,11 +146,17 @@ void  TCBScheduler::InternalThreadEntry()
 			}
 			else if (message->messageType == MSG_STARTSIM)
 			{
-				cout << __FUNCTION__  << " We got a MSG_STARTSIM message " << endl;
+//				cout << __FUNCTION__  << startMessage << endl;
+
 				simRunning = true;
 
 				// reset the simulation time counter.
 				currentSimTimems = 0;
+
+				// Log the start of the simulation
+				logMessage.logMsgTimems = currentSimTimems;
+				logMessage.text = startMessage.c_str();
+				logMessages.push_back(logMessage);
 
 				// Calculate the end time.
 				endSimTimems = simTimeSec * MILISECPERSEC;
@@ -169,13 +184,12 @@ void  TCBScheduler::InternalThreadEntry()
 					threadScheduled = earliestDeadlineFirstScheduler(currentSimTimems, runingTCBThread);
 				}
 
-				cout << " thread number " << runingTCBThread->getTCBThreadID() << endl;
+//				cout << " thread number " << runingTCBThread->getTCBThreadID() << endl;
 
 				// start the TCBThread Loop.
 				runingTCBThread->resume();
 
-				// set the next wake up time based on the computation time.
-				// Yep it's set to 10 ms.
+				// set the next wake up time
 				updatetimeSpec (nextWakeupTime, simTimeIncrementms);
 			}
 			else if (message->messageType == MSG_TCBTHREADONE)
@@ -183,7 +197,13 @@ void  TCBScheduler::InternalThreadEntry()
 				// This message is asynchronous so we dont' update the simulation
 				// times.  If we blow past nextWakeupTime then mq_timedreceive will
 				// immediately return.
-				cout << __FUNCTION__  << " " << currentSimTimems << " MSG_TCBTHREADONE message thread " << message->threadNumber << endl;
+//				cout << __FUNCTION__  << " " << currentSimTimems << threadDoneMessage << message->threadNumber << endl;
+
+				// Log the completion of the thread.
+				logMessage.logMsgTimems = currentSimTimems;
+				logMessage.text = threadDoneMessage.c_str();
+				logMessage.threadNumber = message->threadNumber;
+				logMessages.push_back(logMessage);
 
 				// this is how we will log stuff.
 //				trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " MSG_TCBTHREADONE message thread ", message->threadNumber);
@@ -256,7 +276,13 @@ void  TCBScheduler::InternalThreadEntry()
 							runingTCBThread = temp;
 							runingTCBThread->resume();
 
-							cout << " " << currentSimTimems << " change to thread number " << runingTCBThread->getTCBThreadID() << endl;
+//							cout << " " << currentSimTimems << threadSwitchMessage << runingTCBThread->getTCBThreadID() << endl;
+
+							// Log the scheduler transition.
+							logMessage.logMsgTimems = currentSimTimems;
+							logMessage.text = threadSwitchMessage.c_str();
+							logMessage.threadNumber = runingTCBThread->getTCBThreadID();
+							logMessages.push_back(logMessage);
 
 	//						trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " change to thread number ", runingTCBThread->getTCBThreadID());
 						}
@@ -269,7 +295,13 @@ void  TCBScheduler::InternalThreadEntry()
 				{
 					// Simulation is ended.  Pack up and go home.
 
-					cout << " " << currentSimTimems << " Simulation Done!" << endl;
+					cout << " " << currentSimTimems << endMessage << endl;
+
+					// Log the message
+					logMessage.logMsgTimems = currentSimTimems;
+					logMessage.text = endMessage.c_str();
+					logMessage.threadNumber = -1;  // There is no thread number associate with this message.
+					logMessages.push_back(logMessage);
 
 					simRunning = false;
 
@@ -279,13 +311,15 @@ void  TCBScheduler::InternalThreadEntry()
 						TCBThreads[i].resetThread( );
 					};
 
+					// Print the logs.
+					printLog();
+
 					// Set the next time out to 1 second.
 					nextWakeupTime.tv_sec += 1;
 				}
 			}
 			else
 			{
-				cout << __FUNCTION__ << " we got a timeout at " << nextWakeupTime.tv_sec << endl;
 				nextWakeupTime.tv_sec += 1;
 			}
 		}
@@ -360,6 +394,26 @@ bool TCBScheduler::earliestDeadlineFirstScheduler(int currentSimTimems, TCBThrea
 //	cout << __FUNCTION__  << " done " << endl;
 }
 
+void TCBScheduler::printLog()
+{
+	for(unsigned int i = 0; i < logMessages.size(); ++i)
+	{
+		cout << logMessages[i].logMsgTimems << "," << logMessages[i].text ;
+
+		// If we have a threadID to print then print it otherwise just print an
+		// endl;
+		if (logMessages[i].threadNumber != -1)
+		{
+			cout << " " << logMessages[i].threadNumber << endl;
+		}
+		else
+		{
+			cout << endl;
+		}
+	}
+
+}
+
 bool TCBScheduler::rateMonotinicScheduler(int currentSimTimems, TCBThread*& thread)
 {
 	double priority = 5000;  // Just some really big number.
@@ -410,6 +464,11 @@ bool TCBScheduler::rateMonotinicScheduler(int currentSimTimems, TCBThread*& thre
 	return threadScheduled;
 
 //	cout << __FUNCTION__  << " done " << endl;
+}
+
+void TCBScheduler::run( )
+{
+	MyThread::StartInternalThread();
 }
 
 bool TCBScheduler::shortestCompletionTimeScheduler(int currentSimTimems, TCBThread*& thread)
@@ -465,11 +524,6 @@ bool TCBScheduler::shortestCompletionTimeScheduler(int currentSimTimems, TCBThre
 	return threadScheduled;
 
 	cout << __FUNCTION__  << " done " << endl;
-}
-
-void TCBScheduler::run( )
-{
-	MyThread::StartInternalThread();
 }
 
 bool  TCBScheduler::schedulerIsInitialized ()
