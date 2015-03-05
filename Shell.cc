@@ -418,9 +418,15 @@ void fireInstruction(string strCommand) {
 			if (scheduler.schedulerIsInitialized()) {
 				scheduler.setSimTime(runTime);
 				cout << "Simulation is beginning...\n";
+
 				scheduler.startSim();
+
+				// Thread will block until the simulation is finished.
+				scheduler.waitForSimTofinish();
+				cout << "Simulation is Complete...\n";
 			}
-			sleep(50);
+
+			sleep(10);
 		} else {
 			cout << "ERROR: Cannot run, parameters not set.\n";
 		}

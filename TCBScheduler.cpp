@@ -205,9 +205,6 @@ void  TCBScheduler::InternalThreadEntry()
 				logMessage.threadNumber = message->threadNumber;
 				logMessages.push_back(logMessage);
 
-				// this is how we will log stuff.
-//				trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " MSG_TCBTHREADONE message thread ", message->threadNumber);
-
 				int nextPeriod = 0;
 
 				// set the thread up to run again.
@@ -283,8 +280,6 @@ void  TCBScheduler::InternalThreadEntry()
 							logMessage.text = threadSwitchMessage.c_str();
 							logMessage.threadNumber = runingTCBThread->getTCBThreadID();
 							logMessages.push_back(logMessage);
-
-	//						trace_logf(_NTO_TRACE_USERFIRST, "%d %s %d", currentSimTimems, " change to thread number ", runingTCBThread->getTCBThreadID());
 						}
 					 }
 
@@ -294,8 +289,9 @@ void  TCBScheduler::InternalThreadEntry()
 				else
 				{
 					// Simulation is ended.  Pack up and go home.
+					MsgStruct simCompleteMessage;
 
-					cout << " " << currentSimTimems << endMessage << endl;
+//					cout << " " << currentSimTimems << endMessage << endl;
 
 					// Log the message
 					logMessage.logMsgTimems = currentSimTimems;
@@ -316,6 +312,15 @@ void  TCBScheduler::InternalThreadEntry()
 
 					// Set the next time out to 1 second.
 					nextWakeupTime.tv_sec += 1;
+
+					// Let the user know that the simulation is complete.
+					simCompleteMessage.messageType = MSG_SIMCOMPLETE;
+
+					if (mq_send(fromSchedmq, reinterpret_cast<char*>(&simCompleteMessage), sizeof(MsgStruct), 0) < 0)
+					{
+						cout << __FUNCTION__  << " Error schedular initialized message "
+									 << strerror( errno ) << endl;
+					}
 				}
 			}
 			else
@@ -411,7 +416,6 @@ void TCBScheduler::printLog()
 			cout << endl;
 		}
 	}
-
 }
 
 bool TCBScheduler::rateMonotinicScheduler(int currentSimTimems, TCBThread*& thread)
@@ -617,4 +621,32 @@ void TCBScheduler::updatetimeSpec (timespec & time, int valuems)
 	}
 
 //	cout << __FUNCTION__  << " time.tv_sec " << time.tv_sec << " time.tv_nsec " << time.tv_nsec << endl << endl;
+}
+
+
+void TCBScheduler::waitForSimTofinish()
+{
+	//	cout << __FUNCTION__  << " begin " << endl;
+
+		char buffer [MAXMSGSIZE + 1];
+
+		MsgStruct * message = reinterpret_cast<MsgStruct *> (buffer);
+
+		// We're going to block until we get a message.  If we get
+		// another message we just loop around.
+		do {
+			if(mq_receive(fromSchedmq, buffer, MAXMSGSIZE, NULL) < 0);
+			{
+				// we got a real error message.
+				if(errno != EOK)
+				{
+					cout << __FUNCTION__  << " Error recieving a message "
+								 	 << strerror( errno ) << endl;
+				}
+			}
+		}
+		while (message->messageType != MSG_SIMCOMPLETE);
+
+	//	cout << __FUNCTION__  << " end " << endl;
+
 }

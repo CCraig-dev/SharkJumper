@@ -103,9 +103,6 @@ public:
 	 */
 	void startSim ();
 
-	// not sure if we need this.
-	void stopSim ();
-
 	/**
 	 * Function: stop
 	 *
@@ -166,6 +163,16 @@ public:
 	 *
 	 */
 	bool schedulerIsInitialized ();
+
+	/**
+	 * Function: waitForSimTofinish
+	 *
+	 *	Causes the calling thread to wait for the simulation to finish.
+	 *
+	 * @return none.
+	 *
+	 */
+	void waitForSimTofinish();
 
 
 private:

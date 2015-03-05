@@ -17,6 +17,7 @@
 #define MSG_SCHEDULARINITIALIZED 2
 #define MSG_STARTSIM 3
 #define MSG_TCBTHREADONE 4
+#define MSG_SIMCOMPLETE 5
 
 // Used for time calculations
 #define MILISECPERSEC 1000
