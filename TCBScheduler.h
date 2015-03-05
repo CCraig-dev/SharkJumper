@@ -106,7 +106,7 @@ public:
 	/**
 	 * Function: stop
 	 *
-	 *	This function is called terminate the thread.
+	 *	This function is called terminate the scheduler.
 	 *
 	 * @return none.
 	 *

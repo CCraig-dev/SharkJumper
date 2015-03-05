@@ -403,15 +403,20 @@ void fireInstruction(string strCommand) {
 				exit(1);
 			}
 
+			int iterationsPerSecond = detectIterations();
+
+			sleep(1);
+
 			// Invoke Scheduler
 			cout << "Run state is valid...\n";
-			int iterationsPerSecond = detectIterations();
-			sleep(2);
+
 
 			TCBScheduler scheduler(threadConfigs, runTime, selectedStrategy,
 					iterationsPerSecond);
+
 			scheduler.run();
 
+			cout << "Schedular is running\n";
 			// We need this sleep in here to allow the scheduler time to set up the message queues.
 			sleep(1);
 
@@ -424,9 +429,12 @@ void fireInstruction(string strCommand) {
 				// Thread will block until the simulation is finished.
 				scheduler.waitForSimTofinish();
 				cout << "Simulation is Complete...\n";
+
+				// Stop the scheduler.
+				scheduler.stop();
+				scheduler.WaitForInternalThreadToExit();
 			}
 
-			sleep(10);
 		} else {
 			cout << "ERROR: Cannot run, parameters not set.\n";
 		}
@@ -568,7 +576,7 @@ bool calculateComputationTime(int channelID, int &iterationsPerSecond) {
 	}
 
 	// Please dont' touch this I don't quite know what it will do.
-	//	    if (ConnectDetach(channelID) == -1) {
+	//	   if (ConnectDetach(channelID) == -1) {
 	//	        printf("Timer: Error in ConnectDetach\n");
 	//	    }
 

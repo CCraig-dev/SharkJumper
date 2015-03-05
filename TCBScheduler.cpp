@@ -108,7 +108,7 @@ void  TCBScheduler::InternalThreadEntry()
 	clock_gettime(CLOCK_REALTIME, &nextWakeupTime);
 
 	// I'm using this to increment the currentSimTimems and set the timer.
-	const int simTimeIncrementms = 2;
+	const int simTimeIncrementms = 5;
 
 	while (running)
 	{
@@ -330,6 +330,13 @@ void  TCBScheduler::InternalThreadEntry()
 		}
 	}
 
+	// stop the TCBThread
+	for(unsigned int i = 0; i < TCBThreads.size(); ++i)
+	{
+		TCBThreads[i].stop( );
+		TCBThreads[i].WaitForInternalThreadToExit();
+	};
+
     // Close the message queue before we exit the thread.
 	if (toSchedmq != -1)
 	{
@@ -341,7 +348,7 @@ void  TCBScheduler::InternalThreadEntry()
 		mq_close(fromSchedmq);
 	}
 
-	cout << __FUNCTION__  << " done" << endl;
+//	cout << __FUNCTION__  << " done" << endl;
 }
 
 bool TCBScheduler::earliestDeadlineFirstScheduler(int currentSimTimems, TCBThread*& thread)
