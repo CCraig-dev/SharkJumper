@@ -238,7 +238,7 @@ void  TCBScheduler::InternalThreadEntry()
 				currentSimTimems += simTimeIncrementms;
 
 				// Check to make sure we don't overshoot our endSimTimems.
-				if (currentSimTimems != endSimTimems)
+				if (currentSimTimems < endSimTimems)
 				{
 
 					 // Call the correct scheduling strategy
