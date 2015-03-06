@@ -121,7 +121,7 @@ void setStateHard() {
 	threadConfigs.push_back(two);
 	threadConfigs.push_back(three);
 
-	selectedStrategy = TCBScheduler::RMS;
+	selectedStrategy = TCBScheduler::EDF;
 }
 
 bool schedulabilityTest(int compute, int period, int deadline) {

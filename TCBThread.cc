@@ -5,10 +5,6 @@
 #include <iostream.h>
 #include <unistd.h>
 
-// For trace events
-#include <sys/neutrino.h>
-#include <sys/trace.h>
-
 // DEBUG CODE
 #include <limits>
 
@@ -20,11 +16,15 @@ TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
  deadlinems(configDeadlinems),
  periodms(configPeriodms),
  TCBThreadID(configTCBThreadID),
+ interationsPerMilisec(0),
  threadPriority(0),
  doWork(0),
  nextPeriodms(0),
  nextDeadlinems(0),
- running(true)
+ numberOfDeadlinesExceeded(0),
+ numberOfDeadlinesMet(0),
+ running(true),
+ computeTimeIterations(0)
 {
 	// calculate the number of iterations we're supposed to run for in our work loop
 	computeTimeIterations = iterationsPerSecond / MILISECPERSEC * configComputeTimems;
@@ -32,6 +32,11 @@ TCBThread::TCBThread (int configComputeTimems, int configPeriodms,
 	interationsPerMilisec = iterationsPerSecond / MILISECPERSEC;
 
 	toSchedmq = 0;
+}
+
+void TCBThread::exceededDeadline()
+{
+	++numberOfDeadlinesExceeded;
 }
 
 int TCBThread::getComputeTimems()
@@ -54,6 +59,16 @@ int TCBThread::getNextPeriod ()
 	return nextPeriodms;
 }
 
+int TCBThread::getNumExceededDeadlines()
+{
+	return numberOfDeadlinesExceeded;
+}
+
+int TCBThread::getNumMetDeadlines()
+{
+	return numberOfDeadlinesMet;
+}
+
 int TCBThread::getPeriodms()
 {
 	return periodms;
@@ -72,6 +87,12 @@ int TCBThread::getTCBThreadID()
 double TCBThread::getThreadPriority()
 {
 	return threadPriority;
+}
+
+
+int TCBThread::getTotalDeadlines()
+{
+	return numberOfDeadlinesExceeded + numberOfDeadlinesMet;
 }
 
 // this is where we do all the work.
@@ -158,6 +179,11 @@ void  TCBThread::InternalThreadEntry()
 	}
 
 //	cout << __FUNCTION__  << "TCBThread " << TCBThreadID << " done" << endl;
+}
+
+void TCBThread::metDeadline()
+{
+	++numberOfDeadlinesMet;
 }
 
 void TCBThread::resetThread()

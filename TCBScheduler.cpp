@@ -181,7 +181,7 @@ void  TCBScheduler::InternalThreadEntry()
 				}
 				else if(strategy == TCBScheduler::SCT)
 				{
-					threadScheduled = earliestDeadlineFirstScheduler(currentSimTimems, runingTCBThread);
+					threadScheduled = shortestCompletionTimeScheduler(currentSimTimems, runingTCBThread);
 				}
 
 //				cout << " thread number " << runingTCBThread->getTCBThreadID() << endl;

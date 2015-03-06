@@ -64,6 +64,16 @@ public:
     int getPeriodms();
 
 	/**
+	 * Function: exceededDeadline
+	 *
+	 *	Increments the counter for the number of deadlines exceeded.
+	 *
+	 * @return None
+	 *
+	 */
+    void exceededDeadline();
+
+	/**
 	 * Function: getRemainingComputeTimems
 	 *
 	 *	Gets the remainign compute time of a thread.
@@ -110,15 +120,56 @@ public:
     int getNextPeriod ();
 
 	/**
+	 * Function: getNumExceededDeadlines
+	 *
+	 *	returns the number of exceeded deadlines.
+	 *
+	 * @return number of deadlines exceeded.
+	 *
+	 */
+    int getNumExceededDeadlines();
+
+	/**
+	 * Function: getNumExceededDeadlines
+	 *
+	 *	returns the number of exceeded deadlines.
+	 *
+	 * @return number of deadlines exceeded.
+	 *
+	 */
+    int getNumMetDeadlines();
+
+	/**
 	 * Function: getThreadPriority
 	 *
 	 *	Gets the calculated priority of a thread.  This is dependent on the
 	 *	scheduling algorithm.
 	 *
-	 * @return 	 * @return returns calculated thread priority.
+	 * @return returns calculated thread priority.
 	 *
 	 */
     double getThreadPriority();
+
+
+	/**
+	 * Function: getNumExceededDeadlines
+	 *
+	 *	returns the total number of deadlines (exceeded or met).
+	 *
+	 * @returns The total number of deadlines.
+	 *
+	 */
+    int getTotalDeadlines();
+
+	/**
+	 * Function: metDeadline
+	 *
+	 *	Increments the counter for the number of deadlines met.
+	 *
+	 * @return None
+	 *
+	 */
+    void metDeadline();
 
 	/**
 	 * Function: suspend
@@ -254,6 +305,12 @@ private:
 	// Holds the calculated next deadline the thread is supposed to run in.
 	// The deadline is calculated from the start of the simulation which is time 0.
 	int nextDeadlinems;
+
+	// Holds the number of times the thread exceeded it's deadline.
+	int numberOfDeadlinesExceeded;
+
+	// Holds the number of times the thread exceeded it's deadline.
+	int numberOfDeadlinesMet;
 
 	// This variable controls the running of the main thread loop.
 	bool running;
