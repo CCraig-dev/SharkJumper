@@ -380,7 +380,6 @@ void fireInstruction(string strCommand) {
 		//Hardcode threadConfigs
 		//set iterations time
 		//set strategy to RMS
-		//set runtime to 5s
 		setStateHard();
 
 	} else if (strCommand.compare("exit") == 0) {
@@ -438,7 +437,7 @@ void fireInstruction(string strCommand) {
 		} else {
 			cout << "ERROR: Cannot run, parameters not set.\n";
 		}
-		return;
+		exit(0);
 	}
 }
 
