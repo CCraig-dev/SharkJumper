@@ -23,6 +23,9 @@ string startMessage = " Simulation Started ";
 string endMessage = " Simulation complete ";
 string threadDoneMessage = " MSG_TCBTHREADONE message thread ";
 string threadSwitchMessage = " changing to thread number ";
+string deadlinesMissedMessage = " deadlines missed for thread ";
+string deadlinesMetMessage = " deadlines met for thread ";
+string totalDeadlinesMessage = " TotalDeadlines for thread ";
 
 TCBScheduler::TCBScheduler(std::vector <TaskParam>& threadConfigs, int runTime, TCBScheduler::SchedulingStrategy selectedStrategy, int iterationsPerSecond)
 : fromSchedmq(0),
@@ -108,7 +111,7 @@ void  TCBScheduler::InternalThreadEntry()
 	clock_gettime(CLOCK_REALTIME, &nextWakeupTime);
 
 	// I'm using this to increment the currentSimTimems and set the timer.
-	const int simTimeIncrementms = 5;
+	const int simTimeIncrementms = 3;
 
 	while (running)
 	{
@@ -211,6 +214,16 @@ void  TCBScheduler::InternalThreadEntry()
 				runingTCBThread->suspend();
 				runingTCBThread->startNewComputePeriod();
 
+				// check to see if we've blown the deadline
+				if (runingTCBThread->getNextDeadline() < currentSimTimems)
+				{
+					runingTCBThread->exceededDeadline();
+				}
+				else
+				{
+					runingTCBThread->metDeadline();
+				}
+
 				// Set update the thread to the next period.
 				nextPeriod = runingTCBThread->getNextPeriod() + runingTCBThread->getPeriodms();
 				runingTCBThread->setNextPeriod(nextPeriod);
@@ -305,6 +318,25 @@ void  TCBScheduler::InternalThreadEntry()
 					for(unsigned int i = 0; i < TCBThreads.size(); ++i)
 					{
 						TCBThreads[i].resetThread( );
+
+						// Log the deadline statistics for that thread.
+						logMessage.logMsgTimems = currentSimTimems;
+						logMessage.text = deadlinesMissedMessage.c_str();
+						logMessage.threadNumber = i;
+						logMessage.value = TCBThreads[i].getNumExceededDeadlines();
+						logMessages.push_back(logMessage);
+
+						logMessage.logMsgTimems = currentSimTimems;
+						logMessage.text = deadlinesMetMessage.c_str();
+						logMessage.threadNumber = i;
+						logMessage.value = TCBThreads[i].getNumMetDeadlines();
+						logMessages.push_back(logMessage);
+
+						logMessage.logMsgTimems = currentSimTimems;
+						logMessage.text = totalDeadlinesMessage.c_str();
+						logMessage.threadNumber = i;
+						logMessage.value = TCBThreads[i].getTotalDeadlines();
+						logMessages.push_back(logMessage);
 					};
 
 					// Print the logs.
@@ -416,12 +448,15 @@ void TCBScheduler::printLog()
 		// endl;
 		if (logMessages[i].threadNumber != -1)
 		{
-			cout << " " << logMessages[i].threadNumber << endl;
+			cout << " " << logMessages[i].threadNumber;
 		}
-		else
+
+		if (logMessages[i].value != -1)
 		{
-			cout << endl;
+			cout << ", " << logMessages[i].value;
 		}
+
+		cout << endl;
 	}
 }
 

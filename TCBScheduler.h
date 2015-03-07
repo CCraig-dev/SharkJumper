@@ -39,6 +39,7 @@ struct LogMsgStruct
 	int logMsgTimems;
 	const char* text;
 	int threadNumber;
+	int value;       // It's a generic value holder Jim. - Spock
 
 	// text is intialized already.
 	LogMsgStruct ()
@@ -48,9 +49,9 @@ struct LogMsgStruct
 
 		// The thread number is -1 to because threads are 0..n
 		threadNumber = -1;
+		value = -1;
 	}
 };
-
 class TCBScheduler: public MyThread
 {
 public:
