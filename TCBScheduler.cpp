@@ -448,7 +448,7 @@ void TCBScheduler::printLog()
 		// endl;
 		if (logMessages[i].threadNumber != -1)
 		{
-			cout << " " << logMessages[i].threadNumber;
+			cout << ", " << logMessages[i].threadNumber;
 		}
 
 		if (logMessages[i].value != -1)

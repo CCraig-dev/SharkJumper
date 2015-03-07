@@ -114,9 +114,17 @@ int main(int argc, char *argv[]) {
 //Set hardcoded values for debug purposes
 void setStateHard() {
 	threadConfigs.clear();
-	TaskParam one = TaskParam(10, 30, 29);
-	TaskParam two = TaskParam(20, 50, 49);
-	TaskParam three = TaskParam(10, 100, 99);
+
+	// Data set 1
+//	TaskParam one = TaskParam(10, 30, 29);
+//	TaskParam two = TaskParam(20, 50, 49);
+//	TaskParam three = TaskParam(10, 100, 99);
+
+	// Data set 2
+	TaskParam one = TaskParam(3, 30, 29);
+	TaskParam two = TaskParam(6, 15, 14);
+	TaskParam three = TaskParam(3, 12, 11);
+
 	threadConfigs.push_back(one);
 	threadConfigs.push_back(two);
 	threadConfigs.push_back(three);
